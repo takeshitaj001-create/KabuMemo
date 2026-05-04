@@ -92,6 +92,60 @@ public class StockApiService(HttpClient http)
         }
     }
 
+    // ---- 配当推移取得（Yahoo Finance v8 chart API） ----
+
+    public async Task<DividendResult> FetchDividendsAsync(string code)
+    {
+        try
+        {
+            var resp = await http.GetFromJsonAsync<List<DividendEntry>>(
+                $"{ProxyBaseUrl}/api/dividends/{Uri.EscapeDataString(code)}");
+            if (resp == null)
+                return DividendResult.Fail("レスポンスが空です");
+            return DividendResult.Ok(resp);
+        }
+        catch (HttpRequestException ex)
+        {
+            var status = ex.StatusCode.HasValue ? $" (HTTP {(int)ex.StatusCode})" : "";
+            return DividendResult.Fail($"HTTP エラー{status}: {ex.Message}");
+        }
+        catch (TaskCanceledException)
+        {
+            return DividendResult.Fail("タイムアウト");
+        }
+        catch (Exception ex)
+        {
+            return DividendResult.Fail($"{ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    // ---- 企業概要取得（Yahoo Finance quoteSummary + CF Workers AI 翻訳） ----
+
+    public async Task<SummaryResult> FetchSummaryAsync(string code)
+    {
+        try
+        {
+            var resp = await http.GetFromJsonAsync<CompanySummaryResponse>(
+                $"{ProxyBaseUrl}/api/summary/{Uri.EscapeDataString(code)}");
+            if (resp == null)
+                return SummaryResult.Fail("レスポンスが空です");
+            return SummaryResult.Ok(resp);
+        }
+        catch (HttpRequestException ex)
+        {
+            var status = ex.StatusCode.HasValue ? $" (HTTP {(int)ex.StatusCode})" : "";
+            return SummaryResult.Fail($"HTTP エラー{status}: {ex.Message}");
+        }
+        catch (TaskCanceledException)
+        {
+            return SummaryResult.Fail("タイムアウト");
+        }
+        catch (Exception ex)
+        {
+            return SummaryResult.Fail($"{ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
     // ---- 適時開示データ取得（irbank.net via Cloudflare Worker） ----
 
     public async Task<IrFetchResult> FetchTdnetAsync(string code)
@@ -301,4 +355,45 @@ public class StockQuote
     public decimal? WeekLow52 { get; set; }
 
     public string Direction => Change > 0 ? "up" : Change < 0 ? "down" : "flat";
+}
+
+// ---- 企業概要取得結果ラッパー ----
+
+public class SummaryResult
+{
+    public CompanySummaryResponse? Data { get; private set; }
+    public string? Error { get; private set; }
+    public bool Success => Data != null;
+
+    public static SummaryResult Ok(CompanySummaryResponse data) => new() { Data = data };
+    public static SummaryResult Fail(string msg) => new() { Error = msg };
+}
+
+// ---- 配当取得結果ラッパー ----
+
+public class DividendResult
+{
+    public List<DividendEntry>? Items { get; private set; }
+    public string? Error { get; private set; }
+    public bool Success => Items != null;
+
+    public static DividendResult Ok(List<DividendEntry> items) => new() { Items = items };
+    public static DividendResult Fail(string msg) => new() { Error = msg };
+}
+
+// ---- 企業概要レスポンスモデル ----
+
+public class CompanySummaryResponse
+{
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    [JsonPropertyName("employees")]
+    public int? Employees { get; set; }
+
+    [JsonPropertyName("city")]
+    public string? City { get; set; }
+
+    [JsonPropertyName("country")]
+    public string? Country { get; set; }
 }

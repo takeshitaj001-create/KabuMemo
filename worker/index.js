@@ -261,6 +261,116 @@ async function handleTdnet(code) {
   });
 }
 
+async function handleDividends(code) {
+  if (!cachedSession) await refreshSession();
+  const { crumb, cookies } = cachedSession;
+  const symbol = encodeURIComponent(code + '.T');
+
+  const resp = await fetch(
+    `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}` +
+    `?events=div&range=6y&interval=1mo&crumb=${encodeURIComponent(crumb)}`,
+    { headers: { 'User-Agent': UA, 'Cookie': cookies, 'Accept': 'application/json' } }
+  );
+  if (!resp.ok) throw new Error(`chart API HTTP ${resp.status}`);
+
+  const data = await resp.json();
+  const dividends = data?.chart?.result?.[0]?.events?.dividends ?? {};
+
+  // 暦年ごとに集計
+  const byYear = {};
+  for (const entry of Object.values(dividends)) {
+    const year = new Date(entry.date * 1000).getFullYear();
+    byYear[year] = (byYear[year] ?? 0) + entry.amount;
+  }
+
+  // 直近5年分（データがある年のみ）
+  const years = Object.keys(byYear).map(Number).sort().slice(-5);
+  const result = years.map(y => ({
+    year: y,
+    amount: Math.round(byYear[y] * 10) / 10,
+  }));
+
+  return new Response(JSON.stringify(result), {
+    headers: { ...CORS, 'Content-Type': 'application/json' },
+  });
+}
+
+async function translateToJapanese(text) {
+  if (!text) return '';
+
+  // 文単位で 450 文字以内のチャンクに分割
+  const sentences = text.match(/[^.!?]+[.!?]*/g) ?? [text];
+  const chunks = [];
+  let current = '';
+  for (const s of sentences) {
+    if ((current + s).length > 450 && current) {
+      chunks.push(current.trim());
+      current = s;
+    } else {
+      current += s;
+    }
+  }
+  if (current.trim()) chunks.push(current.trim());
+
+  // 各チャンクを MyMemory で翻訳
+  const parts = [];
+  for (const chunk of chunks) {
+    try {
+      const resp = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=en|ja`,
+        { headers: { 'Accept': 'application/json' } }
+      );
+      if (resp.ok) {
+        const d = await resp.json();
+        parts.push(d?.responseData?.translatedText ?? chunk);
+      } else {
+        parts.push(chunk);
+      }
+    } catch {
+      parts.push(chunk);
+    }
+  }
+  return parts.join('');
+}
+
+async function handleSummary(code) {
+  if (!cachedSession) await refreshSession();
+  const { crumb, cookies } = cachedSession;
+  const symbol = encodeURIComponent(code + '.T');
+
+  const resp = await fetch(
+    `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}` +
+    `?modules=assetProfile&crumb=${encodeURIComponent(crumb)}`,
+    { headers: { 'User-Agent': UA, 'Cookie': cookies, 'Accept': 'application/json' } }
+  );
+  if (!resp.ok) throw new Error(`quoteSummary HTTP ${resp.status}`);
+
+  const data = await resp.json();
+  const profile = data?.quoteSummary?.result?.[0]?.assetProfile ?? {};
+
+  const rawDescription = profile.longBusinessSummary ?? '';
+  let description = '';
+
+  if (rawDescription) {
+    try {
+      description = await translateToJapanese(rawDescription);
+    } catch {
+      description = rawDescription;
+    }
+  }
+
+  const result = {
+    description,
+    employees: profile.fullTimeEmployees ?? null,
+    city: profile.city ?? null,
+    country: profile.country ?? null,
+  };
+
+  return new Response(JSON.stringify(result), {
+    headers: { ...CORS, 'Content-Type': 'application/json' },
+  });
+}
+
 async function handleName(code) {
   const resp = await fetch(
     `https://query1.finance.yahoo.com/v1/finance/search` +
@@ -294,6 +404,18 @@ export default {
         const code = path.slice('/api/quote/'.length);
         if (!code) return new Response('code required', { status: 400, headers: CORS });
         return await handleQuote(code);
+      }
+
+      if (path.startsWith('/api/dividends/')) {
+        const code = path.slice('/api/dividends/'.length);
+        if (!code) return new Response('code required', { status: 400, headers: CORS });
+        return await handleDividends(code);
+      }
+
+      if (path.startsWith('/api/summary/')) {
+        const code = path.slice('/api/summary/'.length);
+        if (!code) return new Response('code required', { status: 400, headers: CORS });
+        return await handleSummary(code);
       }
 
       if (path.startsWith('/api/tdnet/')) {

@@ -22,6 +22,12 @@ public class StockItem
 
     public string? LastUpdated { get; set; }
 
+    // 企業概要
+    public string? CompanyDescription { get; set; }
+    public int? Employees { get; set; }
+    public string? CompanyCity { get; set; }
+    public string? CompanyCountry { get; set; }
+
     // 基本情報・参考指標
     public string? Exchange { get; set; }
     public long? MarketCap { get; set; }
@@ -34,4 +40,13 @@ public class StockItem
     public decimal? DividendRate { get; set; }
     public decimal? WeekHigh52 { get; set; }
     public decimal? WeekLow52 { get; set; }
+
+    // 配当推移（暦年集計、直近最大5年）
+    public List<DividendEntry>? DividendHistory { get; set; }
+}
+
+public class DividendEntry
+{
+    public int Year { get; set; }
+    public decimal Amount { get; set; }
 }

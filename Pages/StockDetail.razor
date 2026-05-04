@@ -175,50 +175,96 @@
         </div>
 
         <div class="company-overview-card card-overview">
-            <h3>企業概要</h3>
-            <p style="color:#aaa;font-size:13px;">企業概要データは取得予定です。</p>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <h3 style="margin:0;">企業概要</h3>
+                <button class="btn-refresh-sm" @onclick="RefreshSummary" disabled="@isRefreshingSummary">
+                    @(isRefreshingSummary ? "取得中…" : "🔄 更新")
+                </button>
+            </div>
+            @if (summaryError)
+            {
+                <div class="error-log-panel" style="margin-bottom:10px;">
+                    <div class="error-log-header">
+                        <span>⚠️ 企業概要取得エラー</span>
+                        <button class="error-log-clear" @onclick="() => summaryError = false">✕</button>
+                    </div>
+                    <div class="error-log-body">
+                        <div class="error-log-line">@summaryErrorMessage</div>
+                    </div>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(stock.CompanyDescription))
+            {
+                <p style="font-size:13px;color:#ccc;line-height:1.7;margin:0 0 12px;">@stock.CompanyDescription</p>
+            }
+            else if (!isRefreshingSummary)
+            {
+                <p style="color:#666;font-size:13px;margin:0 0 12px;">企業概要を取得するには更新ボタンを押してください。</p>
+            }
             <div class="meta-row">
-                <span>設立 <strong style="color:#bbb;">—</strong></span>
-                <span>上場 <strong style="color:#bbb;">—</strong></span>
-                <span>従業員 <strong style="color:#bbb;">—</strong></span>
+                <span>従業員 <strong style="color:#ddd;">@(stock.Employees.HasValue ? $"{stock.Employees.Value:N0}人" : "—")</strong></span>
+                <span>所在地 <strong style="color:#ddd;">@FormatLocation(stock.CompanyCity, stock.CompanyCountry)</strong></span>
             </div>
         </div>
 
 <div class="dividend-card card-dividend">
             <div class="dividend-card-header">
                 <h3>配当推移（過去5年）</h3>
-                <div class="cagr-badge">
-                    <span class="cagr-label">CAGR（年平均成長率）</span>
-                    <span class="cagr-value">— <span class="cagr-unit">/年</span></span>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div class="cagr-badge">
+                        <span class="cagr-label">CAGR（年平均成長率）</span>
+                        <span class="cagr-value">@DivCagrText <span class="cagr-unit">/年</span></span>
+                    </div>
+                    <button class="btn-refresh-sm" @onclick="RefreshDividends" disabled="@isRefreshingDividends">
+                        @(isRefreshingDividends ? "取得中…" : "🔄 更新")
+                    </button>
                 </div>
             </div>
+            @if (dividendError)
+            {
+                <div class="error-log-panel" style="margin-bottom:10px;">
+                    <div class="error-log-header">
+                        <span>⚠️ 配当データ取得エラー</span>
+                        <button class="error-log-clear" @onclick="() => dividendError = false">✕</button>
+                    </div>
+                    <div class="error-log-body">
+                        <div class="error-log-line">@dividendErrorMessage</div>
+                    </div>
+                </div>
+            }
             <div class="dividend-chart">
-                <svg viewBox="0 0 420 170" style="width:100%;height:auto;">
-                    <line x1="36" y1="20" x2="400" y2="20" stroke="#f0f2f5" stroke-width="1" />
-                    <line x1="36" y1="57" x2="400" y2="57" stroke="#f0f2f5" stroke-width="1" />
-                    <line x1="36" y1="94" x2="400" y2="94" stroke="#f0f2f5" stroke-width="1" />
-                    <line x1="36" y1="130" x2="400" y2="130" stroke="#f0f2f5" stroke-width="1" />
-                    <text x="30" y="24" text-anchor="end" font-size="10" fill="#bbb">100</text>
-                    <text x="30" y="61" text-anchor="end" font-size="10" fill="#bbb">75</text>
-                    <text x="30" y="98" text-anchor="end" font-size="10" fill="#bbb">50</text>
-                    <text x="30" y="134" text-anchor="end" font-size="10" fill="#bbb">25</text>
-                    <rect x="46" y="59" width="52" height="66" fill="#90caf9" rx="4" />
-                    <text x="72" y="53" text-anchor="middle" font-size="11" font-weight="600" fill="#555">—</text>
-                    <text x="72" y="145" text-anchor="middle" font-size="11" fill="#888">Y-4</text>
-                    <rect x="114" y="48" width="52" height="77" fill="#64b5f6" rx="4" />
-                    <text x="140" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#555">—</text>
-                    <text x="140" y="145" text-anchor="middle" font-size="11" fill="#888">Y-3</text>
-                    <rect x="182" y="43" width="52" height="82" fill="#42a5f5" rx="4" />
-                    <text x="208" y="37" text-anchor="middle" font-size="11" font-weight="600" fill="#555">—</text>
-                    <text x="208" y="145" text-anchor="middle" font-size="11" fill="#888">Y-2</text>
-                    <rect x="250" y="32" width="52" height="93" fill="#1e88e5" rx="4" />
-                    <text x="276" y="26" text-anchor="middle" font-size="11" font-weight="600" fill="#555">—</text>
-                    <text x="276" y="145" text-anchor="middle" font-size="11" fill="#888">Y-1</text>
-                    <rect x="318" y="21" width="52" height="104" fill="#1565c0" rx="4" />
-                    <text x="344" y="15" text-anchor="middle" font-size="11" font-weight="600" fill="#555">—</text>
-                    <text x="344" y="145" text-anchor="middle" font-size="11" fill="#888">今期</text>
-                </svg>
-                <p style="text-align:center;font-size:12px;color:#bbb;margin:4px 0 0;">配当データは取得予定</p>
+                @{
+                    var divBars = GetDivBars();
+                    var divGridLines = GetDivGridLines();
+                }
+                @if (divBars.Count > 0)
+                {
+                    <svg viewBox="0 0 420 170" style="width:100%;height:auto;">
+                        @foreach (var gl in divGridLines)
+                        {
+                            <line x1="36" y1="@Sv(gl.Y)" x2="400" y2="@Sv(gl.Y)" stroke="#f0f2f5" stroke-width="1" />
+                            @SvgText(30, gl.Y + 4, "end", 9, "#bbb", gl.Label)
+                        }
+                        @foreach (var bar in divBars)
+                        {
+                            <rect x="@bar.X" y="@Sv(bar.Y)" width="52" height="@Sv(bar.H)" fill="@bar.Color" rx="4" />
+                            @SvgText(bar.X + 26, bar.Y - 5, "middle", 11, "#ccc", bar.Amount.ToString("N0"), bold: true)
+                            @SvgText(bar.X + 26, 145, "middle", 11, "#888", bar.Year.ToString())
+                        }
+                    </svg>
+                }
+                else if (isRefreshingDividends)
+                {
+                    <div style="text-align:center;padding:30px 0;color:#888;font-size:13px;">配当データを取得中…</div>
+                }
+                else if (stock?.DividendHistory != null && stock.DividendHistory.Count == 0)
+                {
+                    <div style="text-align:center;padding:30px 0;color:#888;font-size:13px;">配当データなし（無配または未対応銘柄）</div>
+                }
+                else
+                {
+                    <div style="text-align:center;padding:30px 0;color:#666;font-size:13px;">配当データを取得するには更新ボタンを押してください。</div>
+                }
             </div>
         </div>
     </div>
@@ -234,10 +280,29 @@
     private bool isRefreshing = false;
     private bool priceError = false;
     private string priceErrorMessage = "";
+    private bool isRefreshingSummary = false;
+    private bool summaryError = false;
+    private string summaryErrorMessage = "";
+    private bool isRefreshingDividends = false;
+    private bool dividendError = false;
+    private string dividendErrorMessage = "";
+
     protected override async Task OnInitializedAsync()
     {
         allStocks = await StockSvc.GetAllAsync();
         stock = allStocks.FirstOrDefault(s => s.Code == Code);
+
+        if (stock != null)
+        {
+            // 株価: 毎回取得
+            _ = RefreshPrice();
+            // 企業概要: 未取得のみ
+            if (string.IsNullOrEmpty(stock.CompanyDescription))
+                _ = RefreshSummary();
+            // 配当: 未取得のみ
+            if (stock.DividendHistory == null)
+                _ = RefreshDividends();
+        }
     }
 
     private bool IsAlarm => stock != null
@@ -308,6 +373,122 @@
 
     private void ClearPriceError() { priceError = false; priceErrorMessage = ""; }
 
+    private async Task RefreshSummary()
+    {
+        if (stock == null) return;
+        isRefreshingSummary = true;
+        summaryError = false;
+        summaryErrorMessage = "";
+        StateHasChanged();
+
+        var result = await ApiSvc.FetchSummaryAsync(stock.Code);
+        if (result.Success && result.Data != null)
+        {
+            var d = result.Data;
+            stock.CompanyDescription = d.Description;
+            stock.Employees = d.Employees;
+            stock.CompanyCity = d.City;
+            stock.CompanyCountry = d.Country;
+            await SaveAsync();
+        }
+        else
+        {
+            summaryError = true;
+            summaryErrorMessage = result.Error ?? "不明なエラー";
+        }
+
+        isRefreshingSummary = false;
+        StateHasChanged();
+    }
+
+    private async Task RefreshDividends()
+    {
+        if (stock == null) return;
+        isRefreshingDividends = true;
+        dividendError = false;
+        dividendErrorMessage = "";
+        StateHasChanged();
+
+        var result = await ApiSvc.FetchDividendsAsync(stock.Code);
+        if (result.Success && result.Items != null)
+        {
+            stock.DividendHistory = result.Items;
+            await SaveAsync();
+        }
+        else
+        {
+            dividendError = true;
+            dividendErrorMessage = result.Error ?? "不明なエラー";
+        }
+
+        isRefreshingDividends = false;
+        StateHasChanged();
+    }
+
+    // ---- 配当チャート用ヘルパー ----
+
+    private record DivBar(int X, double Y, double H, string Color, int Year, decimal Amount);
+
+    private static readonly int[] DivBarX = [46, 114, 182, 250, 318];
+    private static readonly string[] DivBarColors = ["#90caf9", "#64b5f6", "#42a5f5", "#1e88e5", "#1565c0"];
+    private const double DivBottom = 130.0;
+    private const double DivHeight = 110.0;
+
+    private List<DivBar> GetDivBars()
+    {
+        var data = stock?.DividendHistory;
+        if (data == null || data.Count == 0) return [];
+        var max = data.Max(d => d.Amount);
+        if (max <= 0) return [];
+        var offset = 5 - data.Count;
+        return data.Select((d, i) =>
+        {
+            var h = (double)(d.Amount / max) * DivHeight;
+            return new DivBar(DivBarX[offset + i], DivBottom - h, h, DivBarColors[offset + i], d.Year, d.Amount);
+        }).ToList();
+    }
+
+    private List<(double Y, string Label)> GetDivGridLines()
+    {
+        var data = stock?.DividendHistory;
+        if (data == null || data.Count == 0) return [];
+        var max = data.Max(d => d.Amount);
+        if (max <= 0) return [];
+        return
+        [
+            (DivBottom - DivHeight * 0.25, (max * 0.25m).ToString("N0")),
+            (DivBottom - DivHeight * 0.50, (max * 0.50m).ToString("N0")),
+            (DivBottom - DivHeight * 0.75, (max * 0.75m).ToString("N0")),
+            (DivBottom - DivHeight,        max.ToString("N0")),
+        ];
+    }
+
+    private string DivCagrText
+    {
+        get
+        {
+            var data = stock?.DividendHistory;
+            if (data == null || data.Count < 2) return "—";
+            var first = (double)data.First().Amount;
+            var last  = (double)data.Last().Amount;
+            if (first <= 0) return "—";
+            var cagr = Math.Pow(last / first, 1.0 / (data.Count - 1)) - 1;
+            return $"{(cagr >= 0 ? "+" : "")}{cagr * 100:F1}%";
+        }
+    }
+
+    // SVG 属性用：InvariantCulture で小数点をドットに統一
+    private static string Sv(double v) =>
+        v.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
+
+    // Razor が <text> をキーワードと解釈するため MarkupString で SVG text 要素を生成
+    private static MarkupString SvgText(double x, double y, string anchor, int size, string fill, string content, bool bold = false)
+    {
+        var ic = System.Globalization.CultureInfo.InvariantCulture;
+        var fw = bold ? " font-weight=\"600\"" : "";
+        return (MarkupString)$"<text x=\"{x.ToString("F1", ic)}\" y=\"{y.ToString("F1", ic)}\" text-anchor=\"{anchor}\" font-size=\"{size}\"{fw} fill=\"{fill}\">{System.Web.HttpUtility.HtmlEncode(content)}</text>";
+    }
+
     private static string FormatPrice(decimal? price)
         => price.HasValue ? $"¥{price.Value:N0}" : "—";
 
@@ -331,6 +512,14 @@
     {
         if (!price.HasValue || !lotSize.HasValue) return "—";
         return $"¥{price.Value * lotSize.Value:N0}";
+    }
+
+    private static string FormatLocation(string? city, string? country)
+    {
+        if (string.IsNullOrEmpty(city) && string.IsNullOrEmpty(country)) return "—";
+        if (string.IsNullOrEmpty(city)) return country!;
+        if (string.IsNullOrEmpty(country)) return city;
+        return $"{city}, {country}";
     }
 
     private void GoBack() => Nav.NavigateTo("/");
