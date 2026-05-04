@@ -1,9 +1,49 @@
 # Visual Studio
 .vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code
+.vscode/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
 
 # Claude Code
 .claude/settings.local.json
 
+# .NET ビルド出力
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Publish 出力
+publish/
+PublishProfiles/
+
 # OS
 Thumbs.db
 .DS_Store
+Desktop.ini
+ehthumbs.db
+
+# ログ・一時ファイル
+*.log
+*.tmp
+*.temp
+*.bak
+*.cache
