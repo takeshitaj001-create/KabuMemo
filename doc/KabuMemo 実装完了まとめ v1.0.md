@@ -168,7 +168,17 @@ dotnet publish -c Release
 
 ## 動作確認手順
 
-1. `dotnet run` → `http://localhost:5124` にアクセス
+```powershell
+# ターミナル①: Worker をローカル起動（http://localhost:8787）
+cd worker
+npx wrangler dev
+
+# ターミナル②: Blazor アプリを起動（http://localhost:5124）
+cd ..
+dotnet run
+```
+
+1. `http://localhost:5124` にアクセス
 2. 「＋ 銘柄を追加」→ 銘柄コード（例: `7203`）を入力し「名称検索」ボタンをクリック → 「トヨタ自動車」が自動入力されること
 3. 「追加」→ 一覧に表示されること
 4. メモ欄を入力 → フォーカスを外す → ブラウザをリロードして保存されていること

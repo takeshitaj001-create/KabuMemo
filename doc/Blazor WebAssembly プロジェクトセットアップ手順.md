@@ -36,7 +36,7 @@ cd KabuMemoWeb
 dotnet run
 ```
 
-ブラウザで `https://localhost:5001`（または表示された URL）を開く。
+ブラウザで `https://localhost:5124`（または表示された URL）を開く。
 
 ホットリロードを使う場合:
 

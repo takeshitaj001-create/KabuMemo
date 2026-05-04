@@ -64,6 +64,17 @@ public class StockApiService(HttpClient http)
                 Low = q.RegularMarketDayLow,
                 Volume = q.RegularMarketVolume,
                 LastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                Exchange = q.FullExchangeName,
+                MarketCap = q.MarketCap,
+                LotSize = q.LotSize,
+                ForwardPE = q.ForwardPE,
+                PriceToBook = q.PriceToBook,
+                EPS = q.EpsTrailingTwelveMonths,
+                BPS = q.BookValue,
+                DividendYield = q.TrailingAnnualDividendYield,
+                DividendRate = q.TrailingAnnualDividendRate,
+                WeekHigh52 = q.FiftyTwoWeekHigh,
+                WeekLow52 = q.FiftyTwoWeekLow,
             });
         }
         catch (HttpRequestException ex)
@@ -227,6 +238,39 @@ public class YahooV7Quote
 
     [JsonPropertyName("regularMarketVolume")]
     public long RegularMarketVolume { get; set; }
+
+    [JsonPropertyName("fullExchangeName")]
+    public string? FullExchangeName { get; set; }
+
+    [JsonPropertyName("marketCap")]
+    public long? MarketCap { get; set; }
+
+    [JsonPropertyName("lotSize")]
+    public int? LotSize { get; set; }
+
+    [JsonPropertyName("forwardPE")]
+    public decimal? ForwardPE { get; set; }
+
+    [JsonPropertyName("priceToBook")]
+    public decimal? PriceToBook { get; set; }
+
+    [JsonPropertyName("epsTrailingTwelveMonths")]
+    public decimal? EpsTrailingTwelveMonths { get; set; }
+
+    [JsonPropertyName("bookValue")]
+    public decimal? BookValue { get; set; }
+
+    [JsonPropertyName("trailingAnnualDividendYield")]
+    public decimal? TrailingAnnualDividendYield { get; set; }
+
+    [JsonPropertyName("trailingAnnualDividendRate")]
+    public decimal? TrailingAnnualDividendRate { get; set; }
+
+    [JsonPropertyName("fiftyTwoWeekHigh")]
+    public decimal? FiftyTwoWeekHigh { get; set; }
+
+    [JsonPropertyName("fiftyTwoWeekLow")]
+    public decimal? FiftyTwoWeekLow { get; set; }
 }
 
 // ---- 株価取得結果モデル ----
@@ -243,6 +287,18 @@ public class StockQuote
     public decimal Low { get; set; }
     public long Volume { get; set; }
     public string LastUpdated { get; set; } = "";
+
+    public string? Exchange { get; set; }
+    public long? MarketCap { get; set; }
+    public int? LotSize { get; set; }
+    public decimal? ForwardPE { get; set; }
+    public decimal? PriceToBook { get; set; }
+    public decimal? EPS { get; set; }
+    public decimal? BPS { get; set; }
+    public decimal? DividendYield { get; set; }
+    public decimal? DividendRate { get; set; }
+    public decimal? WeekHigh52 { get; set; }
+    public decimal? WeekLow52 { get; set; }
 
     public string Direction => Change > 0 ? "up" : Change < 0 ? "down" : "flat";
 }

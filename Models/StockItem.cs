@@ -21,4 +21,17 @@ public class StockItem
     public long? Volume { get; set; }
 
     public string? LastUpdated { get; set; }
+
+    // 基本情報・参考指標
+    public string? Exchange { get; set; }
+    public long? MarketCap { get; set; }
+    public int? LotSize { get; set; }
+    public decimal? ForwardPE { get; set; }
+    public decimal? PriceToBook { get; set; }
+    public decimal? EPS { get; set; }
+    public decimal? BPS { get; set; }
+    public decimal? DividendYield { get; set; }
+    public decimal? DividendRate { get; set; }
+    public decimal? WeekHigh52 { get; set; }
+    public decimal? WeekLow52 { get; set; }
 }

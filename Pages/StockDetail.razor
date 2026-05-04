@@ -96,27 +96,24 @@
             <h3>基本情報・参考指標</h3>
             <div class="info-grid">
                 <div class="info-section-label">市場情報</div>
-                <div class="info-row"><span class="label">市場</span><span class="value placeholder-val">取得予定</span></div>
-                <div class="info-row"><span class="label">業種</span><span class="value placeholder-val">取得予定</span></div>
-                <div class="info-row"><span class="label">時価総額</span><span class="value placeholder-val">取得予定</span></div>
-                <div class="info-row"><span class="label">単元株数</span><span class="value placeholder-val">取得予定</span></div>
-                <div class="info-row"><span class="label">最低購入代金</span><span class="value placeholder-val">取得予定</span></div>
+                <div class="info-row"><span class="label">市場</span><span class="value">@(stock.Exchange ?? "—")</span></div>
+                <div class="info-row"><span class="label">時価総額</span><span class="value">@FormatMarketCap(stock.MarketCap)</span></div>
+                <div class="info-row"><span class="label">単元株数</span><span class="value">@(stock.LotSize.HasValue ? $"{stock.LotSize.Value:N0}株" : "—")</span></div>
+                <div class="info-row"><span class="label">最低購入代金</span><span class="value">@FormatMinPurchase(stock.CurrentPrice, stock.LotSize)</span></div>
 
                 <div class="info-section-label">株価指標</div>
-                <div class="info-row"><span class="label">PER（会社予想）</span><span class="value placeholder-val">取得予定</span></div>
-                <div class="info-row"><span class="label">PBR</span><span class="value placeholder-val">取得予定</span></div>
-                <div class="info-row"><span class="label">EPS（1株利益）</span><span class="value placeholder-val">取得予定</span></div>
-                <div class="info-row"><span class="label">BPS（1株純資産）</span><span class="value placeholder-val">取得予定</span></div>
-                <div class="info-row"><span class="label">ROE</span><span class="value placeholder-val">取得予定</span></div>
-                <div class="info-row"><span class="label">自己資本比率</span><span class="value placeholder-val">取得予定</span></div>
+                <div class="info-row"><span class="label">PER（会社予想）</span><span class="value">@FormatDecimal(stock.ForwardPE, "倍")</span></div>
+                <div class="info-row"><span class="label">PBR</span><span class="value">@FormatDecimal(stock.PriceToBook, "倍")</span></div>
+                <div class="info-row"><span class="label">EPS（1株利益）</span><span class="value">@FormatDecimal(stock.EPS, "円")</span></div>
+                <div class="info-row"><span class="label">BPS（1株純資産）</span><span class="value">@FormatDecimal(stock.BPS, "円")</span></div>
 
                 <div class="info-section-label">配当</div>
-                <div class="info-row"><span class="label">配当利回り</span><span class="value placeholder-val">取得予定</span></div>
-                <div class="info-row"><span class="label">1株配当</span><span class="value placeholder-val">取得予定</span></div>
+                <div class="info-row"><span class="label">配当利回り</span><span class="value">@FormatPercent(stock.DividendYield)</span></div>
+                <div class="info-row"><span class="label">1株配当</span><span class="value">@FormatDecimal(stock.DividendRate, "円")</span></div>
 
-                <div class="info-section-label">年初来</div>
-                <div class="info-row"><span class="label">年初来高値</span><span class="value placeholder-val">取得予定</span></div>
-                <div class="info-row"><span class="label">年初来安値</span><span class="value placeholder-val">取得予定</span></div>
+                <div class="info-section-label">52週レンジ</div>
+                <div class="info-row"><span class="label">52週高値</span><span class="value">@FormatPrice(stock.WeekHigh52)</span></div>
+                <div class="info-row"><span class="label">52週安値</span><span class="value">@FormatPrice(stock.WeekLow52)</span></div>
             </div>
         </div>
 
@@ -287,6 +284,17 @@
             stock.LowPrice = q.Low;
             stock.Volume = q.Volume;
             stock.LastUpdated = q.LastUpdated;
+            stock.Exchange = q.Exchange;
+            stock.MarketCap = q.MarketCap;
+            stock.LotSize = q.LotSize;
+            stock.ForwardPE = q.ForwardPE;
+            stock.PriceToBook = q.PriceToBook;
+            stock.EPS = q.EPS;
+            stock.BPS = q.BPS;
+            stock.DividendYield = q.DividendYield;
+            stock.DividendRate = q.DividendRate;
+            stock.WeekHigh52 = q.WeekHigh52;
+            stock.WeekLow52 = q.WeekLow52;
         }
         else
         {
@@ -302,6 +310,28 @@
 
     private static string FormatPrice(decimal? price)
         => price.HasValue ? $"¥{price.Value:N0}" : "—";
+
+    private static string FormatDecimal(decimal? value, string unit)
+        => value.HasValue ? $"{value.Value:N2} {unit}" : "—";
+
+    private static string FormatPercent(decimal? value)
+        => value.HasValue ? $"{value.Value * 100:F2}%" : "—";
+
+    private static string FormatMarketCap(long? cap)
+    {
+        if (!cap.HasValue) return "—";
+        if (cap.Value >= 1_0000_0000_0000)
+            return $"{cap.Value / 1_0000_0000_0000.0:F1}兆円";
+        if (cap.Value >= 1_0000_0000)
+            return $"{cap.Value / 1_0000_0000.0:F0}億円";
+        return $"{cap.Value / 1_0000.0:F0}万円";
+    }
+
+    private static string FormatMinPurchase(decimal? price, int? lotSize)
+    {
+        if (!price.HasValue || !lotSize.HasValue) return "—";
+        return $"¥{price.Value * lotSize.Value:N0}";
+    }
 
     private void GoBack() => Nav.NavigateTo("/");
 
