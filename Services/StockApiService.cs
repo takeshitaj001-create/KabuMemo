@@ -92,6 +92,33 @@ public class StockApiService(HttpClient http)
         }
     }
 
+    // ---- 株価チャート取得（Yahoo Finance v8 chart API、1年日次） ----
+
+    public async Task<ChartResult> FetchChartAsync(string code)
+    {
+        try
+        {
+            var resp = await http.GetFromJsonAsync<List<ChartPoint>>(
+                $"{ProxyBaseUrl}/api/chart/{Uri.EscapeDataString(code)}");
+            if (resp == null)
+                return ChartResult.Fail("レスポンスが空です");
+            return ChartResult.Ok(resp);
+        }
+        catch (HttpRequestException ex)
+        {
+            var status = ex.StatusCode.HasValue ? $" (HTTP {(int)ex.StatusCode})" : "";
+            return ChartResult.Fail($"HTTP エラー{status}: {ex.Message}");
+        }
+        catch (TaskCanceledException)
+        {
+            return ChartResult.Fail("タイムアウト");
+        }
+        catch (Exception ex)
+        {
+            return ChartResult.Fail($"{ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
     // ---- 配当推移取得（Yahoo Finance v8 chart API） ----
 
     public async Task<DividendResult> FetchDividendsAsync(string code)
@@ -367,6 +394,18 @@ public class SummaryResult
 
     public static SummaryResult Ok(CompanySummaryResponse data) => new() { Data = data };
     public static SummaryResult Fail(string msg) => new() { Error = msg };
+}
+
+// ---- チャート取得結果ラッパー ----
+
+public class ChartResult
+{
+    public List<ChartPoint>? Points { get; private set; }
+    public string? Error { get; private set; }
+    public bool Success => Points != null;
+
+    public static ChartResult Ok(List<ChartPoint> points) => new() { Points = points };
+    public static ChartResult Fail(string msg) => new() { Error = msg };
 }
 
 // ---- 配当取得結果ラッパー ----

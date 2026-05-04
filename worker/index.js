@@ -261,6 +261,43 @@ async function handleTdnet(code) {
   });
 }
 
+async function handleChart(code) {
+  if (!cachedSession) await refreshSession();
+  const { crumb, cookies } = cachedSession;
+  const symbol = encodeURIComponent(code + '.T');
+
+  const doFetch = () => fetch(
+    `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}` +
+    `?interval=1d&range=1y&crumb=${encodeURIComponent(cachedSession.crumb)}`,
+    { headers: { 'User-Agent': UA, 'Cookie': cachedSession.cookies, 'Accept': 'application/json' } }
+  );
+
+  let resp = await doFetch();
+  if (resp.status === 401) {
+    await refreshSession();
+    resp = await doFetch();
+  }
+  if (!resp.ok) throw new Error(`chart API HTTP ${resp.status}`);
+
+  const data = await resp.json();
+  const result = data?.chart?.result?.[0];
+  if (!result) throw new Error('チャートデータがありません');
+
+  const timestamps = result.timestamp ?? [];
+  const closes = result.indicators?.quote?.[0]?.close ?? [];
+
+  const points = [];
+  for (let i = 0; i < timestamps.length; i++) {
+    if (closes[i] == null) continue;
+    const date = new Date(timestamps[i] * 1000).toISOString().slice(0, 10);
+    points.push({ date, close: Math.round(closes[i] * 10) / 10 });
+  }
+
+  return new Response(JSON.stringify(points), {
+    headers: { ...CORS, 'Content-Type': 'application/json' },
+  });
+}
+
 async function handleDividends(code) {
   if (!cachedSession) await refreshSession();
   const { crumb, cookies } = cachedSession;
@@ -404,6 +441,12 @@ export default {
         const code = path.slice('/api/quote/'.length);
         if (!code) return new Response('code required', { status: 400, headers: CORS });
         return await handleQuote(code);
+      }
+
+      if (path.startsWith('/api/chart/')) {
+        const code = path.slice('/api/chart/'.length);
+        if (!code) return new Response('code required', { status: 400, headers: CORS });
+        return await handleChart(code);
       }
 
       if (path.startsWith('/api/dividends/')) {

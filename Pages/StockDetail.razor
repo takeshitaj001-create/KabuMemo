@@ -120,7 +120,9 @@
         <div class="detail-card card-stock">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
                 <h3 style="margin:0;">株価情報</h3>
-                <button class="btn-refresh-sm" @onclick="RefreshPrice" disabled="@isRefreshing">
+                <button class="btn-refresh-sm"
+                        @onclick="async () => { _ = RefreshChart(); await RefreshPrice(); }"
+                        disabled="@isRefreshing">
                     @(isRefreshing ? "取得中…" : "🔄 更新")
                 </button>
             </div>
@@ -139,15 +141,45 @@
                     </div>
                 </div>
             }
-            <div class="chart-placeholder">
-                <svg class="chart-line" viewBox="0 0 300 100" style="position:absolute;inset:0;width:100%;height:100%;">
-                    <polyline points="0,80 40,65 80,70 120,45 160,55 200,35 240,40 300,25"
-                              fill="none" stroke="#0066cc" stroke-width="2.5" />
-                    <polyline points="0,80 40,65 80,70 120,45 160,55 200,35 240,40 300,25 300,100 0,100"
-                              fill="rgba(0,102,204,0.08)" stroke="none" />
-                </svg>
-                <span style="position:relative;z-index:1;color:#aaa;font-size:13px;">📊 株価チャート（取得予定）</span>
+            <div class="chart-period-row">
+                @foreach (var p in new[]{"1M","3M","6M","1Y"})
+                {
+                    var period = p;
+                    <button class="chart-period-btn @(chartPeriod == period ? "active" : "")"
+                            @onclick="() => chartPeriod = period">@period</button>
+                }
             </div>
+            @{
+                var chartData = GetFilteredChartData();
+            }
+            @if (chartData.Count >= 2)
+            {
+                var cMin   = chartData.Min(p => p.Close);
+                var cMax   = chartData.Max(p => p.Close);
+                var line   = BuildChartPoints(chartData, cMin, cMax);
+                var fill   = line + $" {Sv(295)},{Sv(ChartYBottom)} {Sv(5)},{Sv(ChartYBottom)}";
+                var lastY  = ChartPriceToY(chartData.Last().Close, cMin, cMax);
+                var up     = chartData.Last().Close >= chartData.First().Close;
+                var stroke = up ? "#0066cc" : "#e03535";
+                var area   = up ? "rgba(0,102,204,0.1)" : "rgba(224,53,53,0.08)";
+                <div class="chart-area">
+                    <svg viewBox="0 0 300 100" style="width:100%;height:140px;display:block;">
+                        <polyline points="@fill" fill="@area" stroke="none" />
+                        <polyline points="@line" fill="none" stroke="@stroke" stroke-width="1.8" />
+                        <circle cx="295" cy="@Sv(lastY)" r="3" fill="@stroke" />
+                        @SvgText(5, 13, "start", 9, "#888", cMax.ToString("N0"))
+                        @SvgText(5, 88, "start", 9, "#888", cMin.ToString("N0"))
+                    </svg>
+                </div>
+            }
+            else
+            {
+                <div class="chart-placeholder">
+                    <span style="color:#aaa;font-size:13px;">
+                        @(isRefreshingChart ? "チャートデータを取得中…" : "📊 チャートデータ未取得")
+                    </span>
+                </div>
+            }
             <div class="info-row">
                 <span class="label">始値</span>
                 <span class="value">@FormatPrice(stock.OpenPrice)</span>
@@ -286,6 +318,8 @@
     private bool isRefreshingDividends = false;
     private bool dividendError = false;
     private string dividendErrorMessage = "";
+    private bool isRefreshingChart = false;
+    private string chartPeriod = "3M";
 
     protected override async Task OnInitializedAsync()
     {
@@ -294,8 +328,9 @@
 
         if (stock != null)
         {
-            // 株価: 毎回取得
+            // 株価・チャート: 毎回取得
             _ = RefreshPrice();
+            _ = RefreshChart();
             // 企業概要: 未取得のみ
             if (string.IsNullOrEmpty(stock.CompanyDescription))
                 _ = RefreshSummary();
@@ -399,6 +434,55 @@
 
         isRefreshingSummary = false;
         StateHasChanged();
+    }
+
+    private async Task RefreshChart()
+    {
+        if (stock == null) return;
+        isRefreshingChart = true;
+        StateHasChanged();
+
+        var result = await ApiSvc.FetchChartAsync(stock.Code);
+        if (result.Success && result.Points != null)
+        {
+            stock.ChartData = result.Points;
+            await SaveAsync();
+        }
+
+        isRefreshingChart = false;
+        StateHasChanged();
+    }
+
+    // ---- チャート描画ヘルパー ----
+
+    private const double ChartYTop = 8.0, ChartYBottom = 88.0;
+
+    private List<ChartPoint> GetFilteredChartData()
+    {
+        var data = stock?.ChartData;
+        if (data == null || data.Count == 0) return [];
+        var cutoff = chartPeriod switch
+        {
+            "1M" => DateTime.Today.AddMonths(-1),
+            "3M" => DateTime.Today.AddMonths(-3),
+            "6M" => DateTime.Today.AddMonths(-6),
+            _    => DateTime.MinValue,
+        };
+        if (cutoff == DateTime.MinValue) return data;
+        return data.Where(p => DateTime.TryParse(p.Date, out var d) && d >= cutoff).ToList();
+    }
+
+    private static double ChartPriceToY(decimal price, decimal min, decimal max)
+    {
+        if (max == min) return (ChartYTop + ChartYBottom) / 2;
+        return ChartYBottom - (double)((price - min) / (max - min)) * (ChartYBottom - ChartYTop);
+    }
+
+    private string BuildChartPoints(List<ChartPoint> data, decimal min, decimal max)
+    {
+        var n = data.Count - 1;
+        return string.Join(" ", data.Select((p, i) =>
+            $"{Sv(5 + (double)i / n * 290)},{Sv(ChartPriceToY(p.Close, min, max))}"));
     }
 
     private async Task RefreshDividends()

@@ -43,10 +43,19 @@ public class StockItem
 
     // 配当推移（暦年集計、直近最大5年）
     public List<DividendEntry>? DividendHistory { get; set; }
+
+    // 株価チャート（日次終値、1年分）
+    public List<ChartPoint>? ChartData { get; set; }
 }
 
 public class DividendEntry
 {
     public int Year { get; set; }
     public decimal Amount { get; set; }
+}
+
+public class ChartPoint
+{
+    public string Date { get; set; } = "";
+    public decimal Close { get; set; }
 }

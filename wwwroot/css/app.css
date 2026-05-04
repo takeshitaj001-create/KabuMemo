@@ -574,6 +574,37 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     overflow: hidden;
 }
 
+/* 期間選択ボタン */
+.chart-period-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+.chart-period-btn {
+    font-size: 11px;
+    padding: 2px 9px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.chart-period-btn.active {
+    background: #0066cc;
+    color: #fff;
+    border-color: #0066cc;
+}
+.chart-period-btn:hover:not(.active) { background: #f0f0f0; }
+
+/* 実データチャートエリア */
+.chart-area {
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    background: #f7f8fa;
+}
+
 /* 企業概要カード */
 .company-overview-card {
     background: #fff;
