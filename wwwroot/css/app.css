@@ -113,3 +113,574 @@ code {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* ===== KabuMemo カスタムスタイル ===== */
+
+* { box-sizing: border-box; }
+
+body {
+    background: #f0f2f5;
+    margin: 0;
+    padding: 0;
+}
+
+/* ヘッダー */
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #1a1a2e;
+    color: #fff;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+}
+.app-header h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+}
+.last-updated {
+    font-size: 12px;
+    color: #aab;
+}
+
+/* メインコンテンツ */
+.app-main {
+    min-height: calc(100vh - 56px);
+    background: #f0f2f5;
+}
+
+/* ツールバー */
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+/* 追加ボタン */
+.btn-add {
+    background: #0066cc;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.btn-add:hover { background: #0055aa; }
+
+/* 凡例 */
+.legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #666;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ffc107;
+    flex-shrink: 0;
+}
+
+/* カード */
+.card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    overflow: hidden;
+    border: none;
+}
+
+/* テーブルスクロール */
+.table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+thead th {
+    background: #f7f8fa;
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e8eaed;
+    white-space: nowrap;
+}
+tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0f2f5;
+    vertical-align: middle;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: #fafbfc; }
+
+/* ハイライト行 */
+tr.highlight-row { background: #fff3cd !important; }
+tr.highlight-row:hover { background: #ffe69c !important; }
+tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
+
+/* 銘柄セル */
+.stock-code { font-weight: 700; font-size: 13px; color: #222; }
+.stock-name { font-size: 12px; color: #888; margin-top: 2px; }
+
+/* 株価セル */
+.price { font-weight: 600; font-size: 15px; color: #222; }
+.change { font-size: 12px; margin-top: 2px; }
+.change.up { color: #e03535; }
+.change.down { color: #1565c0; }
+.change.flat { color: #888; }
+
+/* メモ入力 */
+.memo-input {
+    width: 100%;
+    min-width: 160px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 12px;
+    resize: none;
+    background: #fafafa;
+    color: #333;
+    line-height: 1.5;
+    transition: border-color 0.15s, background 0.15s;
+}
+.memo-input:focus { outline: none; border-color: #0066cc; background: #fff; }
+
+/* 日付入力 */
+.date-input {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 5px 7px;
+    font-size: 12px;
+    background: #fafafa;
+    color: #333;
+    transition: border-color 0.15s;
+}
+.date-input:focus { outline: none; border-color: #0066cc; }
+
+/* アラームバッジ */
+.date-badge {
+    margin-top: 4px;
+    display: inline-block;
+    background: #ffc107;
+    color: #5a3e00;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* 詳細ボタン */
+.btn-detail {
+    background: #f0f2f5;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #333;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+.btn-detail:hover { background: #e4e6ea; }
+
+/* 株価更新ボタン */
+.btn-refresh {
+    background: #f0f8ff;
+    color: #0066cc;
+    border: 1px solid #c5dff8;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+.btn-refresh:hover:not(:disabled) { background: #dbeeff; }
+.btn-refresh:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-refresh-sm {
+    background: #f0f8ff;
+    color: #0066cc;
+    border: 1px solid #c5dff8;
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.btn-refresh-sm:hover:not(:disabled) { background: #dbeeff; }
+.btn-refresh-sm:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* 削除ボタン */
+.btn-delete {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+}
+.btn-delete:hover { opacity: 1; }
+
+/* 空状態 */
+.empty-state {
+    text-align: center;
+    padding: 48px 16px;
+    color: #888;
+}
+.empty-state p { margin: 8px 0 16px; font-size: 14px; }
+
+/* モーダル */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+.modal-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    min-width: 320px;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+}
+
+/* 戻るバー */
+.back-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.btn-back {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #333;
+    transition: background 0.15s;
+}
+.btn-back:hover { background: #f0f2f5; }
+
+/* 詳細ヘッダー */
+.detail-header {
+    background: #1a1a2e;
+    border-radius: 10px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.detail-price-block { text-align: right; }
+.detail-price {
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+}
+.detail-change { font-size: 14px; margin-top: 4px; }
+.detail-change.up { color: #ff7070; }
+.detail-change.down { color: #64b5f6; }
+.detail-change.flat { color: #aab; }
+
+/* 外部リンク行 */
+.link-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.ext-link-box {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: opacity 0.15s, border-color 0.15s;
+    min-width: 0;
+}
+.ext-link-box:hover { opacity: 0.85; text-decoration: none; }
+.ext-link-box.yahoo  { background: #fff1f1; border-color: #ffc5c5; }
+.ext-link-box.minkabu { background: #f1fff3; border-color: #a8e6ae; }
+.ext-link-box.kabutan { background: #fff8f1; border-color: #ffd4a0; }
+.link-logo {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+    flex-shrink: 0;
+    width: 28px;
+    text-align: center;
+}
+.link-body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.link-label {
+    font-size: 12px;
+    color: #333;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ext-badge {
+    font-size: 10px;
+    color: #999;
+    margin-top: 2px;
+}
+.link-arrow {
+    margin-left: auto;
+    font-size: 16px;
+    color: #999;
+    flex-shrink: 0;
+}
+
+/* メモカード（詳細） */
+.detail-memo-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+.tag-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+.tag-btn {
+    border: none;
+    border-radius: 16px;
+    padding: 5px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.15s;
+}
+.tag-btn.off { background: #f0f2f5; color: #666; }
+.tag-btn.buy.on  { background: #ffebee; color: #c62828; }
+.tag-btn.hold.on { background: #e8f5e9; color: #2e7d32; }
+.tag-btn.alarm.on { background: #ffc107; color: #5a3e00; }
+.alarm-date-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #555;
+}
+.alarm-date-row .date-input { max-width: 160px; }
+
+/* 詳細2カラムグリッド */
+.detail-main-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+        "basic stock"
+        "basic overview"
+        "basic dividend";
+    gap: 16px;
+}
+.card-basic    { grid-area: basic; }
+.card-stock    { grid-area: stock; }
+.card-overview { grid-area: overview; }
+.card-dividend { grid-area: dividend; }
+
+.detail-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+.detail-card h3, .company-overview-card h3, .dividend-card h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+}
+
+/* 情報グリッド */
+.info-grid { display: flex; flex-direction: column; gap: 0; }
+.info-section-label {
+    font-size: 11px;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 12px 0 4px;
+    padding-top: 8px;
+    border-top: 1px solid #f0f2f5;
+}
+.info-section-label:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid #f7f8fa;
+    font-size: 13px;
+    gap: 8px;
+}
+.info-row:last-child { border-bottom: none; }
+.info-row .label { color: #888; flex-shrink: 0; }
+.info-row .value { font-weight: 600; color: #333; text-align: right; }
+.placeholder-val { color: #bbb !important; font-weight: 400 !important; }
+
+/* チャートプレースホルダー */
+.chart-placeholder {
+    height: 140px;
+    background: #f7f8fa;
+    border: 1px dashed #ddd;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 企業概要カード */
+.company-overview-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+.company-overview-card p { margin: 0 0 10px; font-size: 13px; color: #444; line-height: 1.8; }
+.meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    font-size: 12px;
+    color: #666;
+}
+
+/* 配当推移カード */
+.dividend-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+.dividend-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.cagr-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    background: #f0f8ff;
+    border: 1px solid #c5dff8;
+    border-radius: 8px;
+    padding: 6px 10px;
+    min-width: 120px;
+}
+.cagr-label { font-size: 10px; color: #888; }
+.cagr-value { font-size: 18px; font-weight: 700; color: #0066cc; line-height: 1; }
+.cagr-unit { font-size: 12px; font-weight: 400; color: #888; }
+.dividend-chart { margin-top: 4px; }
+
+/* エラーログパネル */
+.error-log-panel {
+    background: #1a1a2e;
+    border: 1px solid #e03535;
+    border-radius: 8px;
+    margin-top: 16px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+    overflow: hidden;
+}
+.error-log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #2a0a0a;
+    padding: 6px 12px;
+    color: #ff7070;
+    font-weight: 600;
+    font-size: 12px;
+}
+.error-log-clear {
+    background: none;
+    border: none;
+    color: #ff7070;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0 4px;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+.error-log-clear:hover { opacity: 1; }
+.error-log-body {
+    padding: 8px 12px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.error-log-line {
+    color: #ffb3b3;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* 適時開示テーブル */
+.card-ir { grid-column: 1 / -1; }
+
+.ir-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ir-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #333; color: #aab; font-weight: 600; }
+.ir-table td { padding: 6px 8px; border-bottom: 1px solid #2a2a2a; vertical-align: top; }
+.ir-date { white-space: nowrap; color: #aab; width: 90px; }
+.ir-category { white-space: nowrap; color: #7eb8f7; width: 80px; }
+.ir-title a { color: #90caf9; text-decoration: none; }
+.ir-title a:hover { text-decoration: underline; }
+
+/* レスポンシブ */
+@media (max-width: 640px) {
+    .link-row { flex-direction: column; }
+    .detail-main-layout {
+        grid-template-columns: 1fr;
+        grid-template-areas: "basic" "stock" "overview" "dividend";
+    }
+    .detail-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .detail-price-block { text-align: left; }
+}

@@ -1,0 +1,315 @@
+@page "/stock/{Code}"
+@inject StockService StockSvc
+@inject StockApiService ApiSvc
+@inject NavigationManager Nav
+
+<PageTitle>@Code - KabuMemo</PageTitle>
+
+<div class="container-fluid px-3 py-3">
+    <div class="back-bar">
+        <button class="btn-back" @onclick="GoBack">← 一覧に戻る</button>
+        <span style="font-size:13px;color:#888;">一覧 › @Code @stock?.Name</span>
+    </div>
+
+    @if (stock == null)
+    {
+        <div class="alert alert-warning mt-3">銘柄コード「@Code」は見つかりませんでした。</div>
+    }
+    else
+    {
+
+    <div class="detail-header">
+        <div class="stock-title">
+            <h2 style="margin:0;font-size:22px;font-weight:700;color:#fff;">@stock.Code</h2>
+            <p style="margin:4px 0 0;font-size:13px;color:#aab;">@stock.Name</p>
+        </div>
+        <div class="detail-price-block">
+            @if (stock.CurrentPrice.HasValue)
+            {
+                <div class="detail-price">¥@stock.CurrentPrice.Value.ToString("N0")</div>
+                <div class="detail-change @stock.PriceDirection">
+                    @(stock.PriceDirection == "up" ? "▲" : stock.PriceDirection == "down" ? "▼" : "—")
+                    @(stock.PriceChange.HasValue ? Math.Abs(stock.PriceChange.Value).ToString("N0") : "")
+                    @(stock.PriceChangeRate.HasValue ? $"({(stock.PriceChangeRate.Value >= 0 ? "+" : "")}{stock.PriceChangeRate.Value:F2}%)" : "")
+                </div>
+            }
+            else
+            {
+                <div class="detail-price" style="color:#aab;">—</div>
+                <div class="detail-change flat">株価取得予定</div>
+            }
+        </div>
+    </div>
+
+    <div class="link-row">
+        <a class="ext-link-box yahoo" href="@YahooUrl" target="_blank" rel="noopener noreferrer">
+            <span class="link-logo">Y!</span>
+            <span class="link-body">
+                <span class="link-label">ヤフーファイナンス<br /><strong>@Code @stock.Name</strong></span>
+                <span class="ext-badge">外部サイト・新しいタブで開く</span>
+            </span>
+            <span class="link-arrow">↗</span>
+        </a>
+        <a class="ext-link-box minkabu" href="@MinkabuUrl" target="_blank" rel="noopener noreferrer">
+            <span class="link-logo">み</span>
+            <span class="link-body">
+                <span class="link-label">みんかぶ<br /><strong>@Code @stock.Name</strong></span>
+                <span class="ext-badge">外部サイト・新しいタブで開く</span>
+            </span>
+            <span class="link-arrow">↗</span>
+        </a>
+        <a class="ext-link-box kabutan" href="@KabutanUrl" target="_blank" rel="noopener noreferrer">
+            <span class="link-logo">株</span>
+            <span class="link-body">
+                <span class="link-label">株探（かぶたん）<br /><strong>@Code @stock.Name</strong></span>
+                <span class="ext-badge">外部サイト・新しいタブで開く</span>
+            </span>
+            <span class="link-arrow">↗</span>
+        </a>
+    </div>
+
+    <div class="detail-memo-card">
+        <h3 style="margin:0 0 10px;font-size:15px;">メモ</h3>
+        <textarea class="memo-input" rows="4" placeholder="この銘柄に関するメモを自由に入力できます…"
+                  style="width:100%;min-height:80px;"
+                  value="@stock.Memo"
+                  @oninput="e => stock.Memo = e.Value?.ToString() ?? string.Empty"
+                  @onblur="SaveAsync"></textarea>
+        <div class="tag-row">
+            <button class="tag-btn buy @(stock.IsBuyCandidate ? "on" : "off")"
+                    @onclick="ToggleBuy">購入検討</button>
+            <button class="tag-btn hold @(stock.IsHolding ? "on" : "off")"
+                    @onclick="ToggleHold">保有中</button>
+            <button class="tag-btn alarm @(IsAlarm ? "on" : "off")" disabled>⚠️ アラーム</button>
+        </div>
+        <div class="alarm-date-row">
+            <label>注目日</label>
+            <input type="date" class="date-input"
+                   value="@stock.AlarmDate"
+                   @oninput="e => { stock.AlarmDate = e.Value?.ToString(); }"
+                   @onblur="SaveAsync" />
+        </div>
+    </div>
+
+    <div class="detail-main-layout">
+        <div class="detail-card card-basic">
+            <h3>基本情報・参考指標</h3>
+            <div class="info-grid">
+                <div class="info-section-label">市場情報</div>
+                <div class="info-row"><span class="label">市場</span><span class="value placeholder-val">取得予定</span></div>
+                <div class="info-row"><span class="label">業種</span><span class="value placeholder-val">取得予定</span></div>
+                <div class="info-row"><span class="label">時価総額</span><span class="value placeholder-val">取得予定</span></div>
+                <div class="info-row"><span class="label">単元株数</span><span class="value placeholder-val">取得予定</span></div>
+                <div class="info-row"><span class="label">最低購入代金</span><span class="value placeholder-val">取得予定</span></div>
+
+                <div class="info-section-label">株価指標</div>
+                <div class="info-row"><span class="label">PER（会社予想）</span><span class="value placeholder-val">取得予定</span></div>
+                <div class="info-row"><span class="label">PBR</span><span class="value placeholder-val">取得予定</span></div>
+                <div class="info-row"><span class="label">EPS（1株利益）</span><span class="value placeholder-val">取得予定</span></div>
+                <div class="info-row"><span class="label">BPS（1株純資産）</span><span class="value placeholder-val">取得予定</span></div>
+                <div class="info-row"><span class="label">ROE</span><span class="value placeholder-val">取得予定</span></div>
+                <div class="info-row"><span class="label">自己資本比率</span><span class="value placeholder-val">取得予定</span></div>
+
+                <div class="info-section-label">配当</div>
+                <div class="info-row"><span class="label">配当利回り</span><span class="value placeholder-val">取得予定</span></div>
+                <div class="info-row"><span class="label">1株配当</span><span class="value placeholder-val">取得予定</span></div>
+
+                <div class="info-section-label">年初来</div>
+                <div class="info-row"><span class="label">年初来高値</span><span class="value placeholder-val">取得予定</span></div>
+                <div class="info-row"><span class="label">年初来安値</span><span class="value placeholder-val">取得予定</span></div>
+            </div>
+        </div>
+
+        <div class="detail-card card-stock">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <h3 style="margin:0;">株価情報</h3>
+                <button class="btn-refresh-sm" @onclick="RefreshPrice" disabled="@isRefreshing">
+                    @(isRefreshing ? "取得中…" : "🔄 更新")
+                </button>
+            </div>
+            @if (priceError)
+            {
+                <div class="error-log-panel" style="margin-bottom:10px;">
+                    <div class="error-log-header">
+                        <span>⚠️ 株価取得エラー</span>
+                        <button class="error-log-clear" @onclick="ClearPriceError">✕</button>
+                    </div>
+                    <div class="error-log-body">
+                        <div class="error-log-line">@priceErrorMessage</div>
+                        <div class="error-log-line" style="margin-top:4px;">
+                            → <a href="@YahooUrl" target="_blank" rel="noopener noreferrer" style="color:#90caf9;">Yahoo Finance で確認 ↗</a>
+                        </div>
+                    </div>
+                </div>
+            }
+            <div class="chart-placeholder">
+                <svg class="chart-line" viewBox="0 0 300 100" style="position:absolute;inset:0;width:100%;height:100%;">
+                    <polyline points="0,80 40,65 80,70 120,45 160,55 200,35 240,40 300,25"
+                              fill="none" stroke="#0066cc" stroke-width="2.5" />
+                    <polyline points="0,80 40,65 80,70 120,45 160,55 200,35 240,40 300,25 300,100 0,100"
+                              fill="rgba(0,102,204,0.08)" stroke="none" />
+                </svg>
+                <span style="position:relative;z-index:1;color:#aaa;font-size:13px;">📊 株価チャート（取得予定）</span>
+            </div>
+            <div class="info-row">
+                <span class="label">始値</span>
+                <span class="value">@FormatPrice(stock.OpenPrice)</span>
+            </div>
+            <div class="info-row">
+                <span class="label">高値</span>
+                <span class="value" style="@(stock.HighPrice.HasValue ? "color:#e03535;" : "")">@FormatPrice(stock.HighPrice)</span>
+            </div>
+            <div class="info-row">
+                <span class="label">安値</span>
+                <span class="value" style="@(stock.LowPrice.HasValue ? "color:#1565c0;" : "")">@FormatPrice(stock.LowPrice)</span>
+            </div>
+            <div class="info-row">
+                <span class="label">前日終値</span>
+                <span class="value">@FormatPrice(stock.PreviousClose)</span>
+            </div>
+            <div class="info-row">
+                <span class="label">出来高</span>
+                <span class="value">@(stock.Volume.HasValue ? stock.Volume.Value.ToString("N0") : "—")</span>
+            </div>
+            @if (!string.IsNullOrEmpty(stock.LastUpdated))
+            {
+                <div style="font-size:10px;color:#bbb;margin-top:8px;text-align:right;">取得: @stock.LastUpdated</div>
+            }
+        </div>
+
+        <div class="company-overview-card card-overview">
+            <h3>企業概要</h3>
+            <p style="color:#aaa;font-size:13px;">企業概要データは取得予定です。</p>
+            <div class="meta-row">
+                <span>設立 <strong style="color:#bbb;">—</strong></span>
+                <span>上場 <strong style="color:#bbb;">—</strong></span>
+                <span>従業員 <strong style="color:#bbb;">—</strong></span>
+            </div>
+        </div>
+
+<div class="dividend-card card-dividend">
+            <div class="dividend-card-header">
+                <h3>配当推移（過去5年）</h3>
+                <div class="cagr-badge">
+                    <span class="cagr-label">CAGR（年平均成長率）</span>
+                    <span class="cagr-value">— <span class="cagr-unit">/年</span></span>
+                </div>
+            </div>
+            <div class="dividend-chart">
+                <svg viewBox="0 0 420 170" style="width:100%;height:auto;">
+                    <line x1="36" y1="20" x2="400" y2="20" stroke="#f0f2f5" stroke-width="1" />
+                    <line x1="36" y1="57" x2="400" y2="57" stroke="#f0f2f5" stroke-width="1" />
+                    <line x1="36" y1="94" x2="400" y2="94" stroke="#f0f2f5" stroke-width="1" />
+                    <line x1="36" y1="130" x2="400" y2="130" stroke="#f0f2f5" stroke-width="1" />
+                    <text x="30" y="24" text-anchor="end" font-size="10" fill="#bbb">100</text>
+                    <text x="30" y="61" text-anchor="end" font-size="10" fill="#bbb">75</text>
+                    <text x="30" y="98" text-anchor="end" font-size="10" fill="#bbb">50</text>
+                    <text x="30" y="134" text-anchor="end" font-size="10" fill="#bbb">25</text>
+                    <rect x="46" y="59" width="52" height="66" fill="#90caf9" rx="4" />
+                    <text x="72" y="53" text-anchor="middle" font-size="11" font-weight="600" fill="#555">—</text>
+                    <text x="72" y="145" text-anchor="middle" font-size="11" fill="#888">Y-4</text>
+                    <rect x="114" y="48" width="52" height="77" fill="#64b5f6" rx="4" />
+                    <text x="140" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#555">—</text>
+                    <text x="140" y="145" text-anchor="middle" font-size="11" fill="#888">Y-3</text>
+                    <rect x="182" y="43" width="52" height="82" fill="#42a5f5" rx="4" />
+                    <text x="208" y="37" text-anchor="middle" font-size="11" font-weight="600" fill="#555">—</text>
+                    <text x="208" y="145" text-anchor="middle" font-size="11" fill="#888">Y-2</text>
+                    <rect x="250" y="32" width="52" height="93" fill="#1e88e5" rx="4" />
+                    <text x="276" y="26" text-anchor="middle" font-size="11" font-weight="600" fill="#555">—</text>
+                    <text x="276" y="145" text-anchor="middle" font-size="11" fill="#888">Y-1</text>
+                    <rect x="318" y="21" width="52" height="104" fill="#1565c0" rx="4" />
+                    <text x="344" y="15" text-anchor="middle" font-size="11" font-weight="600" fill="#555">—</text>
+                    <text x="344" y="145" text-anchor="middle" font-size="11" fill="#888">今期</text>
+                </svg>
+                <p style="text-align:center;font-size:12px;color:#bbb;margin:4px 0 0;">配当データは取得予定</p>
+            </div>
+        </div>
+    </div>
+
+    } @* end else *@
+</div>
+
+@code {
+    [Parameter] public string Code { get; set; } = "";
+
+    private StockItem? stock;
+    private List<StockItem> allStocks = [];
+    private bool isRefreshing = false;
+    private bool priceError = false;
+    private string priceErrorMessage = "";
+    protected override async Task OnInitializedAsync()
+    {
+        allStocks = await StockSvc.GetAllAsync();
+        stock = allStocks.FirstOrDefault(s => s.Code == Code);
+    }
+
+    private bool IsAlarm => stock != null
+        && !string.IsNullOrEmpty(stock.AlarmDate)
+        && string.Compare(stock.AlarmDate, DateTime.Today.ToString("yyyy-MM-dd"), StringComparison.Ordinal) <= 0;
+
+    private string YahooUrl => $"https://finance.yahoo.co.jp/quote/{Code}.T";
+    private string MinkabuUrl => $"https://minkabu.jp/stock/{Code}";
+    private string KabutanUrl => $"https://kabutan.jp/stock/?code={Code}";
+
+    private async Task ToggleBuy()
+    {
+        if (stock == null) return;
+        stock.IsBuyCandidate = !stock.IsBuyCandidate;
+        await SaveAsync();
+    }
+
+    private async Task ToggleHold()
+    {
+        if (stock == null) return;
+        stock.IsHolding = !stock.IsHolding;
+        await SaveAsync();
+    }
+
+    private async Task RefreshPrice()
+    {
+        if (stock == null) return;
+        isRefreshing = true;
+        priceError = false;
+        priceErrorMessage = "";
+        StateHasChanged();
+
+        var result = await ApiSvc.FetchQuoteAsync(stock.Code);
+        if (result.Success && result.Quote != null)
+        {
+            var q = result.Quote;
+            stock.CurrentPrice = q.Close;
+            stock.PreviousClose = q.PreviousClose;
+            stock.PriceChange = q.Change;
+            stock.PriceChangeRate = q.ChangeRate;
+            stock.PriceDirection = q.Direction;
+            stock.OpenPrice = q.Open;
+            stock.HighPrice = q.High;
+            stock.LowPrice = q.Low;
+            stock.Volume = q.Volume;
+            stock.LastUpdated = q.LastUpdated;
+        }
+        else
+        {
+            priceError = true;
+            priceErrorMessage = result.Error ?? "不明なエラー";
+        }
+
+        isRefreshing = false;
+        await SaveAsync();
+    }
+
+    private void ClearPriceError() { priceError = false; priceErrorMessage = ""; }
+
+    private static string FormatPrice(decimal? price)
+        => price.HasValue ? $"¥{price.Value:N0}" : "—";
+
+    private void GoBack() => Nav.NavigateTo("/");
+
+    private async Task SaveAsync()
+    {
+        if (stock == null) return;
+        var idx = allStocks.FindIndex(s => s.Code == Code);
+        if (idx >= 0) allStocks[idx] = stock;
+        await StockSvc.SaveAsync(allStocks);
+    }
+}

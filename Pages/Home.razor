@@ -1,7 +1,359 @@
-﻿@page "/"
+@page "/"
+@inject StockService StockSvc
+@inject StockApiService ApiSvc
+@inject NavigationManager Nav
 
-<PageTitle>Home</PageTitle>
+<PageTitle>KabuMemo</PageTitle>
 
-<h1>Hello, world!</h1>
+@if (showDeleteConfirm)
+{
+    <div class="modal-overlay" @onclick="CancelDelete">
+        <div class="modal-box" @onclick:stopPropagation>
+            <h3 style="margin:0 0 12px;font-size:18px;">削除の確認</h3>
+            <p style="margin:0 0 20px;">銘柄コード「@deleteTargetCode」を削除しますか？</p>
+            <div class="d-flex gap-2 justify-content-end">
+                <button class="btn btn-secondary" @onclick="CancelDelete">キャンセル</button>
+                <button class="btn btn-danger" @onclick="ConfirmDelete">削除</button>
+            </div>
+        </div>
+    </div>
+}
 
-Welcome to your new app.
+@if (showAddModal)
+{
+    <div class="modal-overlay" @onclick="CloseAddModal">
+        <div class="modal-box" @onclick:stopPropagation>
+            <h3 style="margin:0 0 16px;font-size:18px;">銘柄を追加</h3>
+            <div class="mb-3">
+                <label class="form-label">銘柄コード</label>
+                <div class="d-flex gap-2">
+                    <input class="form-control" @bind="newCode" placeholder="例: 7203" maxlength="10" />
+                    <button class="btn btn-outline-secondary"
+                            @onclick="SearchStockName"
+                            disabled="@isSearchingName"
+                            style="white-space:nowrap;min-width:72px;">
+                        @(isSearchingName ? "検索中…" : "名称検索")
+                    </button>
+                </div>
+                @if (!string.IsNullOrEmpty(nameSearchError))
+                {
+                    <div style="font-size:11px;color:#e03535;margin-top:4px;">@nameSearchError</div>
+                }
+            </div>
+            <div class="mb-3">
+                <label class="form-label">銘柄名</label>
+                <input class="form-control" @bind="newName" placeholder="例: トヨタ自動車" maxlength="50" />
+            </div>
+            @if (!string.IsNullOrEmpty(addError))
+            {
+                <div class="alert alert-danger py-1 px-2 mb-3" style="font-size:13px;">@addError</div>
+            }
+            <div class="d-flex gap-2 justify-content-end">
+                <button class="btn btn-secondary" @onclick="CloseAddModal">キャンセル</button>
+                <button class="btn btn-primary" @onclick="AddStock">追加</button>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-fluid px-3 py-3">
+    <div class="toolbar">
+        <h2 style="margin:0;font-size:18px;font-weight:700;">
+            銘柄一覧 <span style="color:#0066cc;">@stocks.Count</span> 件
+        </h2>
+        <div class="d-flex gap-2 align-items-center">
+            @if (isUpdatingPrices)
+            {
+                <span style="font-size:12px;color:#888;">
+                    株価取得中 @updatedCount/@stocks.Count …
+                </span>
+            }
+            else if (!string.IsNullOrEmpty(lastPriceUpdateTime))
+            {
+                <span style="font-size:11px;color:#aaa;">更新: @lastPriceUpdateTime</span>
+            }
+            @if (priceApiError)
+            {
+                <span style="font-size:11px;color:#e03535;" title="株価APIへのアクセスに失敗しました。CORS制約の可能性があります。">⚠️ 株価取得失敗</span>
+            }
+            <button class="btn-refresh" @onclick="UpdateAllPrices" disabled="@isUpdatingPrices">
+                @(isUpdatingPrices ? "更新中…" : "📊 株価更新")
+            </button>
+            <button class="btn-add" @onclick="OpenAddModal">＋ 銘柄を追加</button>
+        </div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-dot"></div>
+            <span>アラーム日付が本日以前の銘柄（ハイライト表示）</span>
+        </div>
+    </div>
+
+    @if (stocks.Count == 0)
+    {
+        <div class="empty-state">
+            <div style="font-size:48px;">📋</div>
+            <p>まだ銘柄が登録されていません。</p>
+            <button class="btn-add" @onclick="OpenAddModal">＋ 銘柄を追加</button>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:70px;"></th>
+                            <th>銘柄</th>
+                            <th style="width:140px;">現在値</th>
+                            <th>メモ</th>
+                            <th style="width:150px;">注目日</th>
+                            <th style="width:44px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in stocks)
+                        {
+                            var alarm = IsAlarm(item);
+                            <tr class="@(alarm ? "highlight-row" : "")">
+                                <td>
+                                    <button class="btn-detail" @onclick="() => NavToDetail(item.Code)">詳細 ›</button>
+                                </td>
+                                <td>
+                                    <div class="stock-code">@item.Code</div>
+                                    <div class="stock-name">@item.Name</div>
+                                </td>
+                                <td>
+                                    @if (item.CurrentPrice.HasValue)
+                                    {
+                                        <div class="price">¥@item.CurrentPrice.Value.ToString("N0")</div>
+                                        <div class="change @item.PriceDirection">
+                                            @(item.PriceDirection == "up" ? "▲" : item.PriceDirection == "down" ? "▼" : "—")
+                                            @(item.PriceChange.HasValue ? Math.Abs(item.PriceChange.Value).ToString("N0") : "")
+                                            @(item.PriceChangeRate.HasValue ? $"({(item.PriceChangeRate.Value >= 0 ? "+" : "")}{item.PriceChangeRate.Value:F2}%)" : "")
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(item.LastUpdated))
+                                        {
+                                            <div style="font-size:10px;color:#bbb;margin-top:2px;">@item.LastUpdated</div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="price" style="color:#bbb;">—</div>
+                                        <div class="change flat" style="font-size:11px;color:#bbb;">未取得</div>
+                                    }
+                                </td>
+                                <td>
+                                    <textarea class="memo-input" rows="2" placeholder="メモを入力…"
+                                              value="@item.Memo"
+                                              @oninput="e => item.Memo = e.Value?.ToString() ?? string.Empty"
+                                              @onblur="SaveAsync"></textarea>
+                                </td>
+                                <td>
+                                    <input type="date" class="date-input"
+                                           value="@item.AlarmDate"
+                                           @oninput="e => { item.AlarmDate = e.Value?.ToString(); }"
+                                           @onblur="SaveAsync" />
+                                    @if (alarm)
+                                    {
+                                        <div class="date-badge">⚠️ アラーム</div>
+                                    }
+                                </td>
+                                <td>
+                                    <button class="btn-delete" title="削除" @onclick="() => DeleteStock(item.Code)">🗑</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    @if (errorLog.Count > 0)
+    {
+        <div class="error-log-panel">
+            <div class="error-log-header">
+                <span>⚠️ エラーログ（@errorLog.Count 件）</span>
+                <button class="error-log-clear" @onclick="() => errorLog.Clear()">✕ クリア</button>
+            </div>
+            <div class="error-log-body">
+                @foreach (var line in errorLog)
+                {
+                    <div class="error-log-line">@line</div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<StockItem> stocks = [];
+    private bool showAddModal = false;
+    private string newCode = "";
+    private string newName = "";
+    private string addError = "";
+    private string nameSearchError = "";
+    private bool isSearchingName = false;
+
+    private bool showDeleteConfirm = false;
+    private string deleteTargetCode = "";
+
+    private bool isUpdatingPrices = false;
+    private bool priceApiError = false;
+    private int updatedCount = 0;
+    private string lastPriceUpdateTime = "";
+    private List<string> errorLog = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        stocks = await StockSvc.GetAllAsync();
+        if (stocks.Any(s => !string.IsNullOrEmpty(s.LastUpdated)))
+            lastPriceUpdateTime = stocks.Where(s => s.LastUpdated != null).Max(s => s.LastUpdated) ?? "";
+    }
+
+    private static bool IsAlarm(StockItem item)
+        => !string.IsNullOrEmpty(item.AlarmDate)
+           && string.Compare(item.AlarmDate, DateTime.Today.ToString("yyyy-MM-dd"), StringComparison.Ordinal) <= 0;
+
+    // ---- 銘柄追加モーダル ----
+
+    private void OpenAddModal()
+    {
+        newCode = "";
+        newName = "";
+        addError = "";
+        nameSearchError = "";
+        showAddModal = true;
+    }
+
+    private void CloseAddModal() => showAddModal = false;
+
+    private async Task SearchStockName()
+    {
+        var code = newCode.Trim();
+        if (string.IsNullOrEmpty(code))
+        {
+            nameSearchError = "銘柄コードを入力してから検索してください。";
+            return;
+        }
+        nameSearchError = "";
+        isSearchingName = true;
+        StateHasChanged();
+
+        var name = await ApiSvc.FetchJapaneseNameAsync(code);
+
+        isSearchingName = false;
+        if (!string.IsNullOrEmpty(name))
+        {
+            newName = name;
+            nameSearchError = "";
+        }
+        else
+        {
+            nameSearchError = "銘柄名を取得できませんでした。手動で入力してください。";
+        }
+        StateHasChanged();
+    }
+
+    private async Task AddStock()
+    {
+        var code = newCode.Trim();
+        var name = newName.Trim();
+        if (string.IsNullOrEmpty(code))
+        {
+            addError = "銘柄コードを入力してください。";
+            return;
+        }
+        if (stocks.Any(s => s.Code == code))
+        {
+            addError = $"銘柄コード「{code}」は既に登録されています。";
+            return;
+        }
+        if (string.IsNullOrEmpty(name))
+        {
+            isSearchingName = true;
+            StateHasChanged();
+            name = await ApiSvc.FetchJapaneseNameAsync(code) ?? "";
+            isSearchingName = false;
+        }
+        stocks.Add(new StockItem { Code = code, Name = name });
+        await StockSvc.SaveAsync(stocks);
+        CloseAddModal();
+    }
+
+    // ---- 株価一括更新 ----
+
+    private async Task UpdateAllPrices()
+    {
+        if (stocks.Count == 0) return;
+        isUpdatingPrices = true;
+        priceApiError = false;
+        updatedCount = 0;
+        errorLog.Clear();
+        int failCount = 0;
+        StateHasChanged();
+
+        foreach (var item in stocks)
+        {
+            var result = await ApiSvc.FetchQuoteAsync(item.Code);
+            if (result.Success && result.Quote != null)
+            {
+                var q = result.Quote;
+                item.CurrentPrice = q.Close;
+                item.PreviousClose = q.PreviousClose;
+                item.PriceChange = q.Change;
+                item.PriceChangeRate = q.ChangeRate;
+                item.PriceDirection = q.Direction;
+                item.OpenPrice = q.Open;
+                item.HighPrice = q.High;
+                item.LowPrice = q.Low;
+                item.Volume = q.Volume;
+                item.LastUpdated = q.LastUpdated;
+            }
+            else
+            {
+                failCount++;
+                var ts = DateTime.Now.ToString("HH:mm:ss");
+                errorLog.Add($"[{ts}] {result.Error}");
+            }
+            updatedCount++;
+            StateHasChanged();
+            await Task.Delay(200);
+        }
+
+        await StockSvc.SaveAsync(stocks);
+        lastPriceUpdateTime = DateTime.Now.ToString("HH:mm");
+        priceApiError = failCount > 0;
+        isUpdatingPrices = false;
+        StateHasChanged();
+    }
+
+    // ---- その他操作 ----
+
+    private void DeleteStock(string code)
+    {
+        deleteTargetCode = code;
+        showDeleteConfirm = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirm = false;
+        deleteTargetCode = "";
+    }
+
+    private async Task ConfirmDelete()
+    {
+        stocks.RemoveAll(s => s.Code == deleteTargetCode);
+        await StockSvc.SaveAsync(stocks);
+        showDeleteConfirm = false;
+        deleteTargetCode = "";
+    }
+
+    private void NavToDetail(string code) => Nav.NavigateTo("/stock/" + code);
+
+    private async Task SaveAsync() => await StockSvc.SaveAsync(stocks);
+}

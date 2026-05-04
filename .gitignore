@@ -47,3 +47,7 @@ ehthumbs.db
 *.temp
 *.bak
 *.cache
+
+# Cloudflare Worker
+worker/node_modules/
+worker/.wrangler/

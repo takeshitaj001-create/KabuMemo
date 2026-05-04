@@ -1,16 +1,10 @@
-﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+@inherits LayoutComponentBase
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+<header class="app-header">
+    <h1>📈 KabuMemo</h1>
+    <span class="last-updated">@DateTime.Now.ToString("yyyy-MM-dd HH:mm") 現在</span>
+</header>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+<main class="app-main">
+    @Body
+</main>

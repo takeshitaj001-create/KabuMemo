@@ -1,0 +1,11 @@
+name = "kabumemo-proxy"
+main = "index.js"
+compatibility_date = "2024-09-23"
+
+# デプロイ手順:
+#   1. npm install
+#   2. npx wrangler login
+#   3. npx wrangler deploy
+#
+# デプロイ後に表示される URL（例: https://kabumemo-proxy.YOUR_NAME.workers.dev）を
+# Services/StockApiService.cs の ProxyBaseUrl 定数に設定してください。
