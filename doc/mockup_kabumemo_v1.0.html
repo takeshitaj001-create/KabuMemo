@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KabuMemo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Hiragino Sans", "Meiryo", sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    /* ===== Header ===== */
+    header {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    header h1 { font-size: 20px; font-weight: 700; letter-spacing: 1px; }
+    header .last-updated { font-size: 12px; color: #aab; }
+
+    /* ===== Main container ===== */
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+
+    /* ===== Toolbar ===== */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .toolbar h2 { font-size: 16px; color: #555; font-weight: 500; }
+    .btn-primary {
+      background: #0066cc;
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: #0055aa; }
+
+    /* ===== Table card ===== */
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table { width: 100%; border-collapse: collapse; min-width: 640px; }
+    thead { background: #f7f8fa; }
+    th {
+      padding: 12px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #888;
+      text-align: left;
+      border-bottom: 1px solid #e8eaed;
+      white-space: nowrap;
+    }
+    td {
+      padding: 12px 14px;
+      font-size: 14px;
+      border-bottom: 1px solid #f0f2f5;
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background 0.1s; }
+    tbody tr:hover { background: #fafbfc; }
+
+    /* ===== Highlight（日付が本日以降） ===== */
+    tr.highlight-row { background: #fff3cd; }
+    tr.highlight-row:hover { background: #ffe69c; }
+    tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
+
+    /* ===== Stock code & name ===== */
+    .stock-code { font-weight: 700; font-size: 13px; color: #1a1a2e; }
+    .stock-name { font-size: 12px; color: #888; margin-top: 2px; }
+
+    /* ===== Price ===== */
+    .price { font-weight: 600; font-size: 15px; }
+    .change { font-size: 12px; margin-top: 2px; }
+    .change.up   { color: #e03535; }   /* 日本式：上昇=赤 */
+    .change.down { color: #1565c0; }   /* 日本式：下落=青 */
+    .change.flat { color: #888; }
+
+    /* ===== Memo input ===== */
+    .memo-input {
+      width: 100%;
+      min-width: 160px;
+      border: 1px solid #e0e0e0;
+      border-radius: 5px;
+      padding: 6px 8px;
+      font-size: 13px;
+      resize: none;
+      font-family: inherit;
+      color: #333;
+      background: #fafafa;
+      transition: border-color 0.15s;
+    }
+    .memo-input:focus { outline: none; border-color: #0066cc; background: #fff; }
+
+    /* ===== Date picker ===== */
+    .date-input {
+      border: 1px solid #e0e0e0;
+      border-radius: 5px;
+      padding: 5px 8px;
+      font-size: 13px;
+      font-family: inherit;
+      color: #333;
+      background: #fafafa;
+      cursor: pointer;
+    }
+    .date-input:focus { outline: none; border-color: #0066cc; }
+    .date-badge {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: #ffc107;
+      color: #5a3e00;
+      font-weight: 600;
+    }
+
+    /* ===== Detail button ===== */
+    .btn-detail {
+      background: #f0f2f5;
+      border: 1px solid #ddd;
+      color: #333;
+      padding: 5px 12px;
+      border-radius: 5px;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .btn-detail:hover { background: #e2e6ea; }
+
+    /* ===== 凡例 ===== */
+    .legend { display: flex; gap: 20px; margin-top: 12px; font-size: 12px; color: #888; align-items: center; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 2px; border-left: 4px solid #ffc107; background: #fff3cd; }
+
+    /* ===========================
+       Detail View
+    =========================== */
+    #detail-view { display: none; }
+
+    .back-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+
+    .link-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .ext-link-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      border-radius: 8px;
+      padding: 10px 14px;
+      text-decoration: none;
+      color: #1a1a2e;
+      transition: background 0.15s, border-color 0.15s;
+      border: 1px solid transparent;
+    }
+    .ext-link-box .link-logo {
+      font-size: 16px;
+      font-weight: 900;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .ext-link-box .link-body {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      min-width: 0;
+    }
+    .ext-link-box .link-label {
+      font-size: 12px;
+      color: #555;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ext-link-box .link-label strong { color: #1a1a2e; }
+    .ext-link-box .link-arrow { font-size: 13px; }
+    /* Yahoo Finance */
+    .ext-link-box.yahoo { background: #fff5f5; border-color: #ffcdd2; }
+    .ext-link-box.yahoo:hover { background: #ffebee; border-color: #ef9a9a; }
+    .ext-link-box.yahoo .link-logo { color: #c62828; }
+    .ext-link-box.yahoo .link-arrow { color: #ef9a9a; }
+    /* みんかぶ */
+    .ext-link-box.minkabu { background: #f1f8e9; border-color: #c5e1a5; }
+    .ext-link-box.minkabu:hover { background: #dcedc8; border-color: #aed581; }
+    .ext-link-box.minkabu .link-logo { color: #33691e; }
+    .ext-link-box.minkabu .link-arrow { color: #aed581; }
+    /* かぶたん */
+    .ext-link-box.kabutan { background: #fff8e1; border-color: #ffe082; }
+    .ext-link-box.kabutan:hover { background: #ffecb3; border-color: #ffd54f; }
+    .ext-link-box.kabutan .link-logo { color: #e65100; }
+    .ext-link-box.kabutan .link-arrow { color: #ffd54f; }
+    .ext-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      color: #999;
+      margin-top: 3px;
+    }
+    .ext-badge::before {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3Cpolyline points='15 3 21 3 21 9'/%3E%3Cline x1='10' y1='14' x2='21' y2='3'/%3E%3C/svg%3E");
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+    @media (max-width: 640px) {
+      .link-row { flex-direction: column; }
+    }
+    .btn-back {
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-back:hover { background: #f5f5f5; }
+
+    .detail-header {
+      background: #1a1a2e;
+      color: #fff;
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .detail-header .stock-title h2 { font-size: 22px; font-weight: 700; }
+    .detail-header .stock-title p  { font-size: 13px; color: #aab; margin-top: 4px; }
+    .detail-price-block { text-align: right; }
+    .detail-price  { font-size: 28px; font-weight: 700; }
+    .detail-change { font-size: 14px; margin-top: 4px; }
+    .detail-change.up   { color: #ff7070; }
+    .detail-change.down { color: #70a8ff; }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 640px) { .detail-grid { grid-template-columns: 1fr; } }
+
+    .detail-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      padding: 18px 20px;
+    }
+    .detail-card h3 {
+      font-size: 12px;
+      color: #888;
+      font-weight: 600;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 7px 0;
+      border-bottom: 1px solid #f0f2f5;
+      font-size: 13px;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .label { color: #888; }
+    .info-row .value { font-weight: 600; }
+
+    .chart-placeholder {
+      background: #f7f8fa;
+      border-radius: 8px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #bbb;
+      font-size: 13px;
+      margin-bottom: 14px;
+      border: 1px dashed #ddd;
+      position: relative;
+      overflow: hidden;
+    }
+    .chart-line { position: absolute; bottom: 0; left: 0; right: 0; height: 100%; }
+
+    .detail-memo-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .detail-memo-card h3 {
+      font-size: 12px;
+      color: #888;
+      font-weight: 600;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .detail-memo-card textarea {
+      width: 100%;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 90px;
+      background: #fafafa;
+    }
+    .detail-memo-card textarea:focus { outline: none; border-color: #0066cc; background: #fff; }
+
+    .tag-row { display: flex; gap: 8px; margin-top: 10px; }
+
+    /* トグルボタン共通 */
+    .tag-btn {
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    /* OFF状態（共通） */
+    .tag-btn.off {
+      background: #f0f2f5;
+      color: #aaa;
+      border-color: #ddd;
+    }
+    /* 購入検討 ON */
+    .tag-btn.buy.on  { background: #ffebee; color: #c62828; border-color: #ef9a9a; }
+    /* 保有中 ON */
+    .tag-btn.hold.on { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+    /* アラーム ON（一覧のハイライトと連動） */
+    .tag-btn.alarm.on  { background: #ffc107; color: #5a3e00; border-color: #ffa000; }
+    .tag-btn.alarm.off { background: #f0f2f5; color: #aaa;     border-color: #ddd; }
+
+    /* 企業概要カード */
+    .company-overview-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .company-overview-card h3 {
+      font-size: 12px;
+      color: #888;
+      font-weight: 600;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .company-overview-card p {
+      font-size: 13px;
+      color: #444;
+      line-height: 1.8;
+    }
+    .company-overview-card .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid #f0f2f5;
+      font-size: 12px;
+      color: #888;
+    }
+    .company-overview-card .meta-row span strong { color: #333; margin-left: 4px; }
+
+    /* 基本情報 2列グリッド */
+    .info-grid { display: block; }
+    .info-grid .info-row { border-bottom: 1px solid #f0f2f5; }
+    .info-section-label {
+      font-size: 11px;
+      color: #aaa;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 10px 0 4px;
+      grid-column: 1 / -1;
+      border-bottom: 1px solid #e8eaed;
+      margin-bottom: 2px;
+    }
+
+    /* 配当増加率バッジ */
+    .dividend-up   { color: #e03535; font-weight: 700; }
+    .dividend-down { color: #1565c0; font-weight: 700; }
+
+    /* 配当推移カード */
+    .dividend-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .dividend-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    .dividend-card-header h3 {
+      font-size: 12px;
+      color: #888;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .cagr-badge {
+      text-align: right;
+    }
+    .cagr-badge .cagr-label {
+      font-size: 11px;
+      color: #aaa;
+      display: block;
+    }
+    .cagr-badge .cagr-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #e03535;
+      line-height: 1.2;
+    }
+    .cagr-badge .cagr-unit {
+      font-size: 12px;
+      color: #888;
+      margin-left: 2px;
+    }
+    .dividend-chart { width: 100%; overflow-x: auto; }
+
+    /* 左：基本情報 / 右：株価・企業概要・配当推移 */
+    .detail-main-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas:
+        "basic stock"
+        "basic overview"
+        "basic dividend";
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 640px) {
+      .detail-main-layout {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "basic"
+          "stock"
+          "overview"
+          "dividend";
+      }
+    }
+    .detail-main-layout .card-basic    { grid-area: basic; }
+    .detail-main-layout .card-stock    { grid-area: stock; }
+    .detail-main-layout .card-overview { grid-area: overview; }
+    .detail-main-layout .card-dividend { grid-area: dividend; }
+    .detail-main-layout .company-overview-card,
+    .detail-main-layout .dividend-card { margin-bottom: 0; }
+
+    /* 注目日設定行 */
+    .alarm-date-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #f0f2f5;
+    }
+    .alarm-date-row label { font-size: 12px; color: #888; white-space: nowrap; }
+    .alarm-date-row .date-input { font-size: 13px; }
+
+    /* ===== IR一覧カード ===== */
+    .ir-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      padding: 18px 20px;
+      margin-top: 16px;
+    }
+    .ir-card h3 {
+      font-size: 12px;
+      color: #888;
+      font-weight: 600;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .ir-table { width: 100%; border-collapse: collapse; }
+    .ir-table th {
+      font-size: 11px;
+      font-weight: 600;
+      color: #aaa;
+      padding: 6px 10px;
+      border-bottom: 1px solid #f0f2f5;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .ir-table td {
+      font-size: 13px;
+      padding: 10px 10px;
+      border-bottom: 1px solid #f5f6f8;
+      vertical-align: middle;
+    }
+    .ir-table tr:last-child td { border-bottom: none; }
+    .ir-table tbody tr:hover { background: #fafbfc; }
+    .ir-category {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .ir-category.kessan   { background: #fff3e0; color: #e65100; }
+    .ir-category.yuuka    { background: #fce4ec; color: #880e4f; }
+    .ir-category.haito    { background: #e8f5e9; color: #1b5e20; }
+    .ir-category.sokai    { background: #e3f2fd; color: #0d47a1; }
+    .ir-category.press    { background: #f3e5f5; color: #4a148c; }
+    .ir-category.gyoseki  { background: #e0f2f1; color: #004d40; }
+    .ir-title-link {
+      color: #1a1a2e;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .ir-title-link:hover { color: #0066cc; text-decoration: underline; }
+    .ir-link-icon {
+      display: inline-block;
+      color: #bbb;
+      font-size: 12px;
+      margin-left: 6px;
+    }
+    .ir-date { color: #888; font-size: 12px; white-space: nowrap; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📈 KabuMemo</h1>
+  <span class="last-updated">株価更新: 2026-05-03 15:30</span>
+</header>
+
+<!-- ===== LIST VIEW ===== -->
+<div id="list-view">
+  <div class="container">
+    <div class="toolbar">
+      <h2>銘柄一覧 <span style="color:#0066cc;font-weight:700;">5</span> 件</h2>
+      <button class="btn-primary" onclick="alert('銘柄追加ダイアログ（実装予定）')">
+        ＋ 銘柄を追加
+      </button>
+    </div>
+    <div class="legend" style="margin-bottom:10px;">
+      <div class="legend-item">
+        <div class="legend-dot"></div>
+        <span>アラーム日付が本日以前の銘柄（ハイライト表示）</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>銘柄</th>
+            <th>現在値</th>
+            <th>メモ</th>
+            <th>注目日</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <tr>
+            <td>
+              <button class="btn-detail" onclick="showDetail('7203','トヨタ自動車','¥3,456','▲ 23 (+0.67%)','up')">詳細 ›</button>
+            </td>
+            <td>
+              <div class="stock-code">7203</div>
+              <div class="stock-name">トヨタ自動車</div>
+            </td>
+            <td>
+              <div class="price">¥3,456</div>
+              <div class="change up">▲ 23 (+0.67%)</div>
+            </td>
+            <td>
+              <textarea class="memo-input" rows="2" placeholder="メモを入力…">決算発表後に見直し。長期保有継続。</textarea>
+            </td>
+            <td>
+              <input type="date" class="date-input" value="2026-05-10" onchange="checkHighlight(this)">
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <button class="btn-detail" onclick="showDetail('6758','ソニーグループ','¥12,340','▼ 45 (−0.36%)','down')">詳細 ›</button>
+            </td>
+            <td>
+              <div class="stock-code">6758</div>
+              <div class="stock-name">ソニーグループ</div>
+            </td>
+            <td>
+              <div class="price">¥12,340</div>
+              <div class="change down">▼ 45 (−0.36%)</div>
+            </td>
+            <td>
+              <textarea class="memo-input" rows="2" placeholder="メモを入力…">ゲーム部門の回復に期待。</textarea>
+            </td>
+            <td>
+              <input type="date" class="date-input" value="2026-04-28" onchange="checkHighlight(this)">
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <button class="btn-detail" onclick="showDetail('9984','ソフトバンクG','¥8,920','▲ 156 (+1.78%)','up')">詳細 ›</button>
+            </td>
+            <td>
+              <div class="stock-code">9984</div>
+              <div class="stock-name">ソフトバンクG</div>
+            </td>
+            <td>
+              <div class="price">¥8,920</div>
+              <div class="change up">▲ 156 (+1.78%)</div>
+            </td>
+            <td>
+              <textarea class="memo-input" rows="2" placeholder="メモを入力…">AI投資の成果に注目。株価回復トレンド。</textarea>
+            </td>
+            <td>
+              <input type="date" class="date-input" value="2026-05-15" onchange="checkHighlight(this)">
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <button class="btn-detail" onclick="showDetail('4063','信越化学工業','¥5,678','— 0 (0.00%)','flat')">詳細 ›</button>
+            </td>
+            <td>
+              <div class="stock-code">4063</div>
+              <div class="stock-name">信越化学工業</div>
+            </td>
+            <td>
+              <div class="price">¥5,678</div>
+              <div class="change flat">— 0 (0.00%)</div>
+            </td>
+            <td>
+              <textarea class="memo-input" rows="2" placeholder="メモを入力…"></textarea>
+            </td>
+            <td>
+              <input type="date" class="date-input" onchange="checkHighlight(this)">
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <button class="btn-detail" onclick="showDetail('6861','キーエンス','¥65,100','▼ 200 (−0.31%)','down')">詳細 ›</button>
+            </td>
+            <td>
+              <div class="stock-code">6861</div>
+              <div class="stock-name">キーエンス</div>
+            </td>
+            <td>
+              <div class="price">¥65,100</div>
+              <div class="change down">▼ 200 (−0.31%)</div>
+            </td>
+            <td>
+              <textarea class="memo-input" rows="2" placeholder="メモを入力…">高PBRだが成長性は本物。押し目を狙う。</textarea>
+            </td>
+            <td>
+              <input type="date" class="date-input" value="2026-05-03" onchange="checkHighlight(this)">
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+      </div><!-- /.table-scroll -->
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ===== DETAIL VIEW ===== -->
+<div id="detail-view">
+  <div class="container">
+    <div class="back-bar">
+      <button class="btn-back" onclick="showList()">← 一覧に戻る</button>
+      <span id="detail-breadcrumb" style="font-size:13px;color:#888;"></span>
+    </div>
+
+    <div class="detail-header">
+      <div class="stock-title">
+        <h2 id="d-code"></h2>
+        <p  id="d-name"></p>
+      </div>
+      <div class="detail-price-block">
+        <div class="detail-price"  id="d-price"></div>
+        <div class="detail-change" id="d-change"></div>
+      </div>
+    </div>
+
+    <div class="link-row">
+      <a id="yahoo-link" class="ext-link-box yahoo" href="#" target="_blank" rel="noopener">
+        <span class="link-logo">Y!</span>
+        <span class="link-body">
+          <span class="link-label">ヤフーファイナンス<br><strong id="yahoo-label-code"></strong></span>
+          <span class="ext-badge">外部サイト・新しいタブで開く</span>
+        </span>
+        <span class="link-arrow">↗</span>
+      </a>
+      <a id="minkabu-link" class="ext-link-box minkabu" href="#" target="_blank" rel="noopener">
+        <span class="link-logo">み</span>
+        <span class="link-body">
+          <span class="link-label">みんかぶ<br><strong id="minkabu-label-code"></strong></span>
+          <span class="ext-badge">外部サイト・新しいタブで開く</span>
+        </span>
+        <span class="link-arrow">↗</span>
+      </a>
+      <a id="kabutan-link" class="ext-link-box kabutan" href="#" target="_blank" rel="noopener">
+        <span class="link-logo">株</span>
+        <span class="link-body">
+          <span class="link-label">株探（かぶたん）<br><strong id="kabutan-label-code"></strong></span>
+          <span class="ext-badge">外部サイト・新しいタブで開く</span>
+        </span>
+        <span class="link-arrow">↗</span>
+      </a>
+    </div>
+
+    <div class="detail-memo-card">
+      <h3>メモ</h3>
+      <textarea placeholder="この銘柄に関するメモを自由に入力できます…">決算発表後に見直し。長期保有継続。</textarea>
+      <div class="tag-row">
+        <button class="tag-btn buy off" onclick="toggleTag(this)">購入検討</button>
+        <button class="tag-btn hold off" onclick="toggleTag(this)">保有中</button>
+        <button class="tag-btn alarm off" id="d-alarm-btn">⚠️ アラーム</button>
+      </div>
+      <div class="alarm-date-row">
+        <label>注目日</label>
+        <input type="date" class="date-input" id="d-alarm-date" onchange="syncDateToList(this)">
+      </div>
+    </div>
+
+    <div class="detail-main-layout">
+
+      <!-- 左：基本情報・参考指標 -->
+      <div class="detail-card card-basic">
+        <h3>基本情報・参考指標</h3>
+        <div class="info-grid">
+
+          <div class="info-section-label">市場情報</div>
+          <div class="info-row"><span class="label">市場</span><span class="value">東証プライム</span></div>
+          <div class="info-row"><span class="label">業種</span><span class="value">輸送用機器</span></div>
+          <div class="info-row"><span class="label">時価総額</span><span class="value">約 56.2 兆円</span></div>
+          <div class="info-row"><span class="label">発行済株式数</span><span class="value">16,245,312 千株</span></div>
+          <div class="info-row"><span class="label">単元株数</span><span class="value">100 株</span></div>
+          <div class="info-row"><span class="label">最低購入代金</span><span class="value">¥345,600</span></div>
+
+          <div class="info-section-label">株価指標</div>
+          <div class="info-row"><span class="label">PER（会社予想）</span><span class="value">9.8 倍</span></div>
+          <div class="info-row"><span class="label">PER（過去3年平均）</span><span class="value">11.2 倍</span></div>
+          <div class="info-row"><span class="label">PBR</span><span class="value">1.12 倍</span></div>
+          <div class="info-row"><span class="label">EPS（1株利益）</span><span class="value">¥352.4</span></div>
+          <div class="info-row"><span class="label">BPS（1株純資産）</span><span class="value">¥3,085.2</span></div>
+          <div class="info-row"><span class="label">ROE</span><span class="value" style="color:#0066cc;">11.4%</span></div>
+          <div class="info-row"><span class="label">自己資本比率</span><span class="value">21.3%</span></div>
+
+          <div class="info-section-label">配当</div>
+          <div class="info-row"><span class="label">配当利回り</span><span class="value" style="color:#0066cc;">3.21%</span></div>
+          <div class="info-row"><span class="label">1株配当</span><span class="value">95.0 円</span></div>
+          <div class="info-row"><span class="label">配当増加率（前年比）</span><span class="value dividend-up">▲ +12.5%</span></div>
+
+          <div class="info-section-label">年初来</div>
+          <div class="info-row"><span class="label">年初来高値</span><span class="value" style="color:#e03535;">¥3,891</span></div>
+          <div class="info-row"><span class="label">年初来安値</span><span class="value" style="color:#1565c0;">¥3,012</span></div>
+
+        </div>
+      </div>
+
+      <!-- 右：株価情報 -->
+      <div class="detail-card card-stock">
+        <h3>株価情報</h3>
+        <div class="chart-placeholder">
+          <svg class="chart-line" viewBox="0 0 300 100" preserveAspectRatio="none">
+            <polyline
+              points="0,80 40,65 80,70 120,45 160,55 200,35 240,40 300,25"
+              fill="none" stroke="#0066cc" stroke-width="2.5"/>
+            <polyline
+              points="0,80 40,65 80,70 120,45 160,55 200,35 240,40 300,25 300,100 0,100"
+              fill="rgba(0,102,204,0.08)" stroke="none"/>
+          </svg>
+          <span style="position:relative;z-index:1;">📊 株価チャート（実装予定）</span>
+        </div>
+        <div class="info-row"><span class="label">始値</span><span class="value">¥3,430</span></div>
+        <div class="info-row"><span class="label">高値</span><span class="value" style="color:#e03535;">¥3,468</span></div>
+        <div class="info-row"><span class="label">安値</span><span class="value" style="color:#1565c0;">¥3,421</span></div>
+        <div class="info-row"><span class="label">出来高</span><span class="value">8,234,000</span></div>
+      </div>
+
+      <!-- 右：企業概要 -->
+      <div class="company-overview-card card-overview">
+      <h3>企業概要</h3>
+      <p>4輪世界首位。国内シェア３割超。傘下に日野、ダイハツ。ＳＵＢＡＲＵ、マツダ、スズキと提携。電動化・自動運転に積極投資。</p>
+      <div class="meta-row">
+        <span>設立<strong>1937年8月28日</strong></span>
+        <span>上場<strong>1949年5月16日</strong></span>
+        <span>従業員<strong>375,235名</strong></span>
+        <span>平均年齢<strong>40.2歳</strong></span>
+        <span>平均年収<strong>855万円</strong></span>
+        <span>代表<strong>佐藤 恒治</strong></span>
+      </div>
+    </div>
+
+      <!-- 右：配当推移 -->
+      <div class="dividend-card card-dividend">
+      <div class="dividend-card-header">
+        <h3>配当推移（過去5年）</h3>
+        <div class="cagr-badge">
+          <span class="cagr-label">CAGR（年平均成長率）</span>
+          <span class="cagr-value">+12.2%<span class="cagr-unit">/年</span></span>
+        </div>
+      </div>
+      <div class="dividend-chart">
+        <svg viewBox="0 0 420 170" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:500px;display:block;">
+          <!-- グリッド線 -->
+          <line x1="36" y1="20"  x2="400" y2="20"  stroke="#f0f2f5" stroke-width="1"/>
+          <line x1="36" y1="55"  x2="400" y2="55"  stroke="#f0f2f5" stroke-width="1"/>
+          <line x1="36" y1="90"  x2="400" y2="90"  stroke="#f0f2f5" stroke-width="1"/>
+          <line x1="36" y1="125" x2="400" y2="125" stroke="#e8eaed" stroke-width="1"/>
+          <!-- Y軸ラベル -->
+          <text x="30" y="24"  text-anchor="end" font-size="10" fill="#bbb">100</text>
+          <text x="30" y="59"  text-anchor="end" font-size="10" fill="#bbb">75</text>
+          <text x="30" y="94"  text-anchor="end" font-size="10" fill="#bbb">50</text>
+          <text x="30" y="129" text-anchor="end" font-size="10" fill="#bbb">0</text>
+          <!-- 2022: 60円  height=66, y=125-66=59 -->
+          <rect x="46"  y="59"  width="52" height="66" fill="#90caf9" rx="4"/>
+          <text x="72"  y="53"  text-anchor="middle" font-size="11" font-weight="600" fill="#555">60円</text>
+          <text x="72"  y="145" text-anchor="middle" font-size="11" fill="#888">2022</text>
+          <!-- 2023: 70円  height=77, y=125-77=48 -->
+          <rect x="114" y="48"  width="52" height="77" fill="#64b5f6" rx="4"/>
+          <text x="140" y="42"  text-anchor="middle" font-size="11" font-weight="600" fill="#555">70円</text>
+          <text x="140" y="145" text-anchor="middle" font-size="11" fill="#888">2023</text>
+          <!-- 2024: 75円  height=82.5, y=125-82.5=42.5 -->
+          <rect x="182" y="43"  width="52" height="82" fill="#42a5f5" rx="4"/>
+          <text x="208" y="37"  text-anchor="middle" font-size="11" font-weight="600" fill="#555">75円</text>
+          <text x="208" y="145" text-anchor="middle" font-size="11" fill="#888">2024</text>
+          <!-- 2025: 85円  height=93.5, y=125-93.5=31.5 -->
+          <rect x="250" y="32"  width="52" height="93" fill="#1e88e5" rx="4"/>
+          <text x="276" y="26"  text-anchor="middle" font-size="11" font-weight="600" fill="#555">85円</text>
+          <text x="276" y="145" text-anchor="middle" font-size="11" fill="#888">2025</text>
+          <!-- 2026: 95円  height=104.5, y=125-104.5=20.5 -->
+          <rect x="318" y="21"  width="52" height="104" fill="#1565c0" rx="4"/>
+          <text x="344" y="15"  text-anchor="middle" font-size="11" font-weight="600" fill="#1565c0">95円</text>
+          <text x="344" y="145" text-anchor="middle" font-size="11" fill="#888">2026</text>
+        </svg>
+      </div>
+    </div>
+
+    </div><!-- /.detail-main-layout -->
+
+    <!-- ===== IR情報一覧 ===== -->
+    <div class="ir-card">
+      <h3>IR情報一覧</h3>
+      <table class="ir-table">
+        <thead>
+          <tr>
+            <th>日付</th>
+            <th>区分</th>
+            <th>タイトル</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="ir-date">2026-05-01</td>
+            <td><span class="ir-category kessan">決算短信</span></td>
+            <td>
+              <a href="#" class="ir-title-link">2026年3月期 決算短信〔日本基準〕（連結）
+                <span class="ir-link-icon">↗</span>
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td class="ir-date">2026-04-15</td>
+            <td><span class="ir-category gyoseki">業績予想</span></td>
+            <td>
+              <a href="#" class="ir-title-link">2027年3月期 通期業績予想の修正に関するお知らせ
+                <span class="ir-link-icon">↗</span>
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td class="ir-date">2026-03-28</td>
+            <td><span class="ir-category haito">配当</span></td>
+            <td>
+              <a href="#" class="ir-title-link">期末配当金の増額および株主優待制度の変更に関するお知らせ
+                <span class="ir-link-icon">↗</span>
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td class="ir-date">2026-03-10</td>
+            <td><span class="ir-category press">プレス</span></td>
+            <td>
+              <a href="#" class="ir-title-link">新型EV「bZ5X」の量産開始および北米投入計画のお知らせ
+                <span class="ir-link-icon">↗</span>
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td class="ir-date">2026-02-14</td>
+            <td><span class="ir-category kessan">決算短信</span></td>
+            <td>
+              <a href="#" class="ir-title-link">2026年3月期 第3四半期 決算短信〔日本基準〕（連結）
+                <span class="ir-link-icon">↗</span>
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td class="ir-date">2025-06-20</td>
+            <td><span class="ir-category sokai">株主総会</span></td>
+            <td>
+              <a href="#" class="ir-title-link">第122回 定時株主総会 招集通知・議決権行使書
+                <span class="ir-link-icon">↗</span>
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td class="ir-date">2025-06-20</td>
+            <td><span class="ir-category yuuka">有報</span></td>
+            <td>
+              <a href="#" class="ir-title-link">有価証券報告書（2025年3月期）
+                <span class="ir-link-icon">↗</span>
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+  const TODAY = new Date().toISOString().slice(0, 10);
+
+  function toggleTag(btn) {
+    btn.classList.toggle('on');
+    btn.classList.toggle('off');
+  }
+
+  let currentDetailCode = null;
+
+  function findListRow(code) {
+    return [...document.querySelectorAll('#list-view tbody tr')]
+      .find(tr => tr.querySelector('.stock-code')?.textContent === code) ?? null;
+  }
+
+  function refreshAlarmState(listRow) {
+    const isAlarm = listRow?.classList.contains('highlight-row') ?? false;
+    const alarmBtn = document.getElementById('d-alarm-btn');
+    alarmBtn.classList.toggle('on',  isAlarm);
+    alarmBtn.classList.toggle('off', !isAlarm);
+  }
+
+  function syncDateToList(detailDateInput) {
+    const listRow = findListRow(currentDetailCode);
+    if (!listRow) return;
+    const listDateInput = listRow.querySelector('.date-input');
+    listDateInput.value = detailDateInput.value;
+    applyHighlight(listDateInput);
+    refreshAlarmState(listRow);
+  }
+
+  function showDetail(code, name, price, change, dir) {
+    currentDetailCode = code;
+    document.getElementById('d-code').textContent = code;
+    document.getElementById('d-name').textContent = name;
+    document.getElementById('d-price').textContent = price;
+    const el = document.getElementById('d-change');
+    el.textContent = change;
+    el.className = 'detail-change ' + dir;
+    document.getElementById('detail-breadcrumb').textContent = '一覧 › ' + code + ' ' + name;
+    document.getElementById('yahoo-link').href = 'https://finance.yahoo.co.jp/quote/' + code + '.T';
+    document.getElementById('yahoo-label-code').textContent = code + ' ' + name;
+    document.getElementById('minkabu-link').href = 'https://minkabu.jp/stock/' + code;
+    document.getElementById('minkabu-label-code').textContent = code + ' ' + name;
+    document.getElementById('kabutan-link').href = 'https://kabutan.jp/stock/?code=' + code;
+    document.getElementById('kabutan-label-code').textContent = code + ' ' + name;
+
+    // 一覧の注目日・アラーム状態を個別画面に反映
+    const listRow = findListRow(code);
+    const listDateInput = listRow?.querySelector('.date-input');
+    document.getElementById('d-alarm-date').value = listDateInput?.value ?? '';
+    refreshAlarmState(listRow);
+
+    document.getElementById('list-view').style.display = 'none';
+    document.getElementById('detail-view').style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+
+  function showList() {
+    document.getElementById('detail-view').style.display = 'none';
+    document.getElementById('list-view').style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+
+  function applyHighlight(input) {
+    const row = input.closest('tr');
+    const existingBadge = row.querySelector('.date-badge');
+    if (input.value && input.value <= TODAY) {
+      row.classList.add('highlight-row');
+      if (!existingBadge) {
+        const b = document.createElement('div');
+        b.className = 'date-badge';
+        b.textContent = '⚠️ アラーム';
+        input.after(b);
+      }
+    } else {
+      row.classList.remove('highlight-row');
+      if (existingBadge) existingBadge.remove();
+    }
+  }
+
+  function checkHighlight(input) { applyHighlight(input); }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#list-view .date-input').forEach(applyHighlight);
+  });
+</script>
+</body>
+</html>
