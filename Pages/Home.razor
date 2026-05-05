@@ -364,7 +364,7 @@
         deleteTargetCode = "";
     }
 
-    private void NavToDetail(string code) => Nav.NavigateTo("/stock/" + code);
+    private void NavToDetail(string code) => Nav.NavigateTo("stock/" + code);
 
     private async Task SaveAsync() => await StockSvc.SaveAsync(stocks);
 }
