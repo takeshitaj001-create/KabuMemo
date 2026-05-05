@@ -124,6 +124,11 @@
                                 <td>
                                     <div class="stock-code">@item.Code</div>
                                     <div class="stock-name">@item.Name</div>
+                                    <div style="display:flex;gap:4px;margin-top:4px;">
+                                        <a class="btn-ext-link" href="https://finance.yahoo.co.jp/quote/@(item.Code).T" target="_blank">Y!</a>
+                                        <a class="btn-ext-link" href="https://minkabu.jp/stock/@item.Code" target="_blank">みん</a>
+                                        <a class="btn-ext-link" href="https://kabutan.jp/stock/?code=@item.Code" target="_blank">株探</a>
+                                    </div>
                                 </td>
                                 <td>
                                     @if (item.CurrentPrice.HasValue)
