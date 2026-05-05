@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KabuMemo</title>
     <base href="/" />
-    <link href="_framework/dotnet.0cb5b64qxt.js" rel="preload" as="script" fetchpriority="high" crossorigin="anonymous" integrity="sha256-YLSe9kTXxUPTceP9aZdqKBHCJWXIWM4x/aW82KwVzsM=" />
+    <link href="_framework/dotnet.1lvvsl14v6.js" rel="preload" as="script" fetchpriority="high" crossorigin="anonymous" integrity="sha256-pdHS+kXiA5sN9dCB0gBKIuwu+EOGEfoAFowOab1FxgY=" />
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
@@ -14,7 +14,7 @@
     <script type="importmap">{
   "imports": {
     "./_framework/blazor.webassembly.js": "./_framework/blazor.webassembly.zxhwjtv6sc.js",
-    "./_framework/dotnet.js": "./_framework/dotnet.0cb5b64qxt.js",
+    "./_framework/dotnet.js": "./_framework/dotnet.1lvvsl14v6.js",
     "./_framework/dotnet.native.js": "./_framework/dotnet.native.mx9wzm9o5h.js",
     "./_framework/dotnet.runtime.js": "./_framework/dotnet.runtime.2zl32tp6ah.js"
   },
@@ -22,8 +22,8 @@
   "integrity": {
     "./_framework/blazor.webassembly.js": "sha256-1xlHuu1iNOJiMMz2BCq95uekwHf6pdpTcgVNKVBboPs=",
     "./_framework/blazor.webassembly.zxhwjtv6sc.js": "sha256-1xlHuu1iNOJiMMz2BCq95uekwHf6pdpTcgVNKVBboPs=",
-    "./_framework/dotnet.0cb5b64qxt.js": "sha256-YLSe9kTXxUPTceP9aZdqKBHCJWXIWM4x/aW82KwVzsM=",
-    "./_framework/dotnet.js": "sha256-YLSe9kTXxUPTceP9aZdqKBHCJWXIWM4x/aW82KwVzsM=",
+    "./_framework/dotnet.1lvvsl14v6.js": "sha256-pdHS+kXiA5sN9dCB0gBKIuwu+EOGEfoAFowOab1FxgY=",
+    "./_framework/dotnet.js": "sha256-pdHS+kXiA5sN9dCB0gBKIuwu+EOGEfoAFowOab1FxgY=",
     "./_framework/dotnet.native.js": "sha256-tlrn00yvndmJzhFdKpELUlytdgWFyGFdTWjI10bgILU=",
     "./_framework/dotnet.native.mx9wzm9o5h.js": "sha256-tlrn00yvndmJzhFdKpELUlytdgWFyGFdTWjI10bgILU=",
     "./_framework/dotnet.runtime.2zl32tp6ah.js": "sha256-/ndm/PF1BeBT5mXzYAES79wNK5sIZIQKAGcUqPL9ZP8=",
@@ -46,6 +46,21 @@
         <a href="." class="reload">Reload</a>
         <span class="dismiss">🗙</span>
     </div>
+    <script>
+      // 404.html からリダイレクトされた場合に元の URL を復元する
+      // 例: /KabuMemo/?p=stock/7203 → /KabuMemo/stock/7203
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var path = params.get('p');
+        if (path) {
+          var query = params.get('q') ? '?' + params.get('q') : '';
+          window.history.replaceState(
+            null, null,
+            window.location.pathname + path + query + window.location.hash
+          );
+        }
+      })();
+    </script>
     <script src="_framework/blazor.webassembly.zxhwjtv6sc.js"></script>
 </body>
 
