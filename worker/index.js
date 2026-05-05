@@ -377,13 +377,15 @@ async function handleSummary(code) {
 
   const resp = await fetch(
     `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}` +
-    `?modules=assetProfile&crumb=${encodeURIComponent(crumb)}`,
+    `?modules=assetProfile,calendarEvents&crumb=${encodeURIComponent(crumb)}`,
     { headers: { 'User-Agent': UA, 'Cookie': cookies, 'Accept': 'application/json' } }
   );
   if (!resp.ok) throw new Error(`quoteSummary HTTP ${resp.status}`);
 
   const data = await resp.json();
-  const profile = data?.quoteSummary?.result?.[0]?.assetProfile ?? {};
+  const r0 = data?.quoteSummary?.result?.[0] ?? {};
+  const profile = r0.assetProfile ?? {};
+  const calendarEvents = r0.calendarEvents ?? {};
 
   const rawDescription = profile.longBusinessSummary ?? '';
   let description = '';
@@ -396,11 +398,18 @@ async function handleSummary(code) {
     }
   }
 
+  // 次回決算発表予定日（Unix タイムスタンプ → ISO 日付文字列）
+  const earningsDates = calendarEvents?.earnings?.earningsDate ?? [];
+  const nextEarningsDate = earningsDates.length > 0
+    ? new Date(earningsDates[0].raw * 1000).toISOString().slice(0, 10)
+    : null;
+
   const result = {
     description,
     employees: profile.fullTimeEmployees ?? null,
     city: profile.city ?? null,
     country: profile.country ?? null,
+    earningsDate: nextEarningsDate,
   };
 
   return new Response(JSON.stringify(result), {

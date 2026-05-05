@@ -101,6 +101,12 @@
                 <div class="info-row"><span class="label">単元株数</span><span class="value">@(stock.LotSize.HasValue ? $"{stock.LotSize.Value:N0}株" : "—")</span></div>
                 <div class="info-row"><span class="label">最低購入代金</span><span class="value">@FormatMinPurchase(stock.CurrentPrice, stock.LotSize)</span></div>
 
+                <div class="info-section-label">決算</div>
+                <div class="info-row">
+                    <span class="label">次回決算発表予定日</span>
+                    <span class="value" style="@EarningsDateStyle(stock.NextEarningsDate)">@FormatEarningsDate(stock.NextEarningsDate)</span>
+                </div>
+
                 <div class="info-section-label">株価指標</div>
                 <div class="info-row"><span class="label">PER（会社予想）</span><span class="value">@FormatDecimal(stock.ForwardPE, "倍")</span></div>
                 <div class="info-row"><span class="label">PBR</span><span class="value">@FormatDecimal(stock.PriceToBook, "倍")</span></div>
@@ -424,6 +430,7 @@
             stock.Employees = d.Employees;
             stock.CompanyCity = d.City;
             stock.CompanyCountry = d.Country;
+            stock.NextEarningsDate = d.EarningsDate;
             await SaveAsync();
         }
         else
@@ -571,6 +578,19 @@
         var ic = System.Globalization.CultureInfo.InvariantCulture;
         var fw = bold ? " font-weight=\"600\"" : "";
         return (MarkupString)$"<text x=\"{x.ToString("F1", ic)}\" y=\"{y.ToString("F1", ic)}\" text-anchor=\"{anchor}\" font-size=\"{size}\"{fw} fill=\"{fill}\">{System.Web.HttpUtility.HtmlEncode(content)}</text>";
+    }
+
+    private static string FormatEarningsDate(string? date)
+    {
+        if (string.IsNullOrEmpty(date)) return "—";
+        return DateTime.TryParse(date, out var d) ? d.ToString("yyyy年M月d日") : date;
+    }
+
+    private static string EarningsDateStyle(string? date)
+    {
+        if (string.IsNullOrEmpty(date) || !DateTime.TryParse(date, out var d)) return "";
+        var days = (d.Date - DateTime.Today).TotalDays;
+        return days >= 0 && days <= 31 ? "color:#e03535;font-weight:700;" : "";
     }
 
     private static string FormatPrice(decimal? price)

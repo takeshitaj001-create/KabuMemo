@@ -435,4 +435,7 @@ public class CompanySummaryResponse
 
     [JsonPropertyName("country")]
     public string? Country { get; set; }
+
+    [JsonPropertyName("earningsDate")]
+    public string? EarningsDate { get; set; }
 }

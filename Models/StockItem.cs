@@ -27,6 +27,7 @@ public class StockItem
     public int? Employees { get; set; }
     public string? CompanyCity { get; set; }
     public string? CompanyCountry { get; set; }
+    public string? NextEarningsDate { get; set; }
 
     // 基本情報・参考指標
     public string? Exchange { get; set; }
