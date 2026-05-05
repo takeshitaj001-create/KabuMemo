@@ -337,14 +337,23 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
 .btn-ext-link {
     font-size: 10px;
     padding: 1px 5px;
-    border: 1px solid #444;
+    border: 1px solid transparent;
     border-radius: 3px;
-    color: #aaa;
+    color: #fff;
     text-decoration: none;
     white-space: nowrap;
     line-height: 1.6;
 }
-.btn-ext-link:hover { color: #fff; border-color: #888; }
+.btn-ext-link:hover { opacity: 0.8; color: #fff; }
+.btn-ext-yahoo   { background: #ff0033; }
+.btn-ext-minkabu { background: #1565c0; }
+.btn-ext-kabutan { background: #e67e00; }
+.ext-link-col {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: flex-start;
+}
 
 /* 削除ボタン */
 .btn-delete {

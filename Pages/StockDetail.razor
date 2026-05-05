@@ -83,7 +83,7 @@
             <button class="tag-btn alarm @(IsAlarm ? "on" : "off")" disabled>⚠️ アラーム</button>
         </div>
         <div class="alarm-date-row">
-            <label>注目日</label>
+            <label>アラーム日</label>
             <input type="date" class="date-input"
                    value="@stock.AlarmDate"
                    @oninput="e => { stock.AlarmDate = e.Value?.ToString(); }"
