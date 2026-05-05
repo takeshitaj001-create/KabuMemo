@@ -33,10 +33,11 @@ jobs:
           cp bin/Release/net10.0/publish/wwwroot/index.html \
              bin/Release/net10.0/publish/wwwroot/404.html
 
-      - name: Deploy to gh-pages
+      - name: Deploy to master/docs
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: bin/Release/net10.0/publish/wwwroot
+          publish_branch: master
           destination_dir: docs
-          force_orphan: true
+          force_orphan: false
