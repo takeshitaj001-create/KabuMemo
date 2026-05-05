@@ -30,6 +30,7 @@
     </div>
     <script>
       // 404.html からリダイレクトされた場合に元の URL を復元する
+      // 例: /KabuMemo/?p=stock/7203 → /KabuMemo/stock/7203
       (function () {
         var params = new URLSearchParams(window.location.search);
         var path = params.get('p');
@@ -37,7 +38,7 @@
           var query = params.get('q') ? '?' + params.get('q') : '';
           window.history.replaceState(
             null, null,
-            window.location.pathname.replace(/\/$/, '') + '/' + path + query + window.location.hash
+            window.location.pathname + path + query + window.location.hash
           );
         }
       })();
