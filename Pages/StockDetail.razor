@@ -250,7 +250,7 @@
                 <h3>配当推移（過去5年）</h3>
                 <div style="display:flex;align-items:center;gap:12px;">
                     <div class="cagr-badge">
-                        <span class="cagr-label">CAGR（年平均成長率）</span>
+                        <span class="cagr-label">CAGR（年平均成長率・当年除く）</span>
                         <span class="cagr-value">@DivCagrText <span class="cagr-unit">/年</span></span>
                     </div>
                     <button class="btn-refresh-sm" @onclick="RefreshDividends" disabled="@isRefreshingDividends">
@@ -277,7 +277,7 @@
                 }
                 @if (divBars.Count > 0)
                 {
-                    <svg viewBox="0 0 420 170" style="width:100%;height:auto;">
+                    <svg viewBox="0 0 420 175" style="width:100%;height:auto;">
                         @foreach (var gl in divGridLines)
                         {
                             <line x1="36" y1="@Sv(gl.Y)" x2="400" y2="@Sv(gl.Y)" stroke="#f0f2f5" stroke-width="1" />
@@ -288,6 +288,10 @@
                             <rect x="@bar.X" y="@Sv(bar.Y)" width="52" height="@Sv(bar.H)" fill="@bar.Color" rx="4" />
                             @SvgText(bar.X + 26, bar.Y - 5, "middle", 11, "#ccc", bar.Amount.ToString("N0"), bold: true)
                             @SvgText(bar.X + 26, 145, "middle", 11, "#888", bar.Year.ToString())
+                            @if (bar.IsCurrentYear)
+                            {
+                                @SvgText(bar.X + 26, 157, "middle", 9, "#e67e22", "(現時点)")
+                            }
                         }
                     </svg>
                 }
@@ -518,7 +522,7 @@
 
     // ---- 配当チャート用ヘルパー ----
 
-    private record DivBar(int X, double Y, double H, string Color, int Year, decimal Amount);
+    private record DivBar(int X, double Y, double H, string Color, int Year, decimal Amount, bool IsCurrentYear);
 
     private static readonly int[] DivBarX = [46, 114, 182, 250, 318];
     private static readonly string[] DivBarColors = ["#90caf9", "#64b5f6", "#42a5f5", "#1e88e5", "#1565c0"];
@@ -532,10 +536,11 @@
         var max = data.Max(d => d.Amount);
         if (max <= 0) return [];
         var offset = 5 - data.Count;
+        var currentYear = DateTime.Today.Year;
         return data.Select((d, i) =>
         {
             var h = (double)(d.Amount / max) * DivHeight;
-            return new DivBar(DivBarX[offset + i], DivBottom - h, h, DivBarColors[offset + i], d.Year, d.Amount);
+            return new DivBar(DivBarX[offset + i], DivBottom - h, h, DivBarColors[offset + i], d.Year, d.Amount, d.Year == currentYear);
         }).ToList();
     }
 
@@ -559,11 +564,14 @@
         get
         {
             var data = stock?.DividendHistory;
-            if (data == null || data.Count < 2) return "—";
-            var first = (double)data.First().Amount;
-            var last  = (double)data.Last().Amount;
+            if (data == null) return "—";
+            var currentYear = DateTime.Today.Year;
+            var filtered = data.Where(d => d.Year < currentYear).ToList();
+            if (filtered.Count < 2) return "—";
+            var first = (double)filtered.First().Amount;
+            var last  = (double)filtered.Last().Amount;
             if (first <= 0) return "—";
-            var cagr = Math.Pow(last / first, 1.0 / (data.Count - 1)) - 1;
+            var cagr = Math.Pow(last / first, 1.0 / (filtered.Count - 1)) - 1;
             return $"{(cagr >= 0 ? "+" : "")}{cagr * 100:F1}%";
         }
     }
