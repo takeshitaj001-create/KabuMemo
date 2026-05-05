@@ -30,17 +30,13 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Set base href for GitHub Pages
-        run: |
-          sed -i 's|<base href="/" />|<base href="/KabuMemo/" />|g' wwwroot/index.html
-
       - name: Publish
         run: dotnet publish -c Release
 
-      - name: Copy index.html to 404.html
+      - name: Set base href for GitHub Pages
         run: |
-          cp bin/Release/net10.0/publish/wwwroot/index.html \
-             bin/Release/net10.0/publish/wwwroot/404.html
+          sed -i 's|<base href="/" />|<base href="/KabuMemo/" />|g' \
+            bin/Release/net10.0/publish/wwwroot/index.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

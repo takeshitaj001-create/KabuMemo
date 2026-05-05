@@ -28,6 +28,20 @@
         <a href="." class="reload">Reload</a>
         <span class="dismiss">🗙</span>
     </div>
+    <script>
+      // 404.html からリダイレクトされた場合に元の URL を復元する
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var path = params.get('p');
+        if (path) {
+          var query = params.get('q') ? '?' + params.get('q') : '';
+          window.history.replaceState(
+            null, null,
+            window.location.pathname.replace(/\/$/, '') + '/' + path + query + window.location.hash
+          );
+        }
+      })();
+    </script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
 </body>
 
