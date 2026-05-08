@@ -12,7 +12,7 @@ public class StockApiService(HttpClient http)
     // 例: "https://kabumemo-proxy.your-name.workers.dev"
     
     private const string ProxyBaseUrl = "https://kabumemo-proxy.kabumemo.workers.dev"; // 本番用
-    //private const string ProxyBaseUrl = "http://localhost:8787"; //ローカルテスト用
+    // private const string ProxyBaseUrl = "http://localhost:8787"; //ローカルテスト用
 
 
     // ---- 銘柄和名取得 ----

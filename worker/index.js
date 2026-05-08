@@ -305,7 +305,7 @@ async function handleDividends(code) {
 
   const resp = await fetch(
     `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}` +
-    `?events=div&range=6y&interval=1mo&crumb=${encodeURIComponent(crumb)}`,
+    `?events=div&range=5y&interval=1mo&crumb=${encodeURIComponent(crumb)}`,
     { headers: { 'User-Agent': UA, 'Cookie': cookies, 'Accept': 'application/json' } }
   );
   if (!resp.ok) throw new Error(`chart API HTTP ${resp.status}`);
@@ -313,18 +313,28 @@ async function handleDividends(code) {
   const data = await resp.json();
   const dividends = data?.chart?.result?.[0]?.events?.dividends ?? {};
 
-  // 暦年ごとに集計
+  // 暦年ごとに集計。7-12月払い=中間配当、1-6月払い=期末配当（3月決算企業向け）
   const byYear = {};
   for (const entry of Object.values(dividends)) {
-    const year = new Date(entry.date * 1000).getFullYear();
-    byYear[year] = (byYear[year] ?? 0) + entry.amount;
+    const date = new Date(entry.date * 1000);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1; // 1-12
+    if (!byYear[year]) byYear[year] = { amount: 0, interimAmount: 0, finalAmount: 0 };
+    byYear[year].amount += entry.amount;
+    if (month >= 7) {
+      byYear[year].interimAmount += entry.amount;
+    } else {
+      byYear[year].finalAmount += entry.amount;
+    }
   }
 
   // 直近5年分（データがある年のみ）
   const years = Object.keys(byYear).map(Number).sort().slice(-5);
   const result = years.map(y => ({
     year: y,
-    amount: Math.round(byYear[y] * 10) / 10,
+    amount: Math.round(byYear[y].amount * 10) / 10,
+    interimAmount: Math.round(byYear[y].interimAmount * 10) / 10,
+    finalAmount: Math.round(byYear[y].finalAmount * 10) / 10,
   }));
 
   return new Response(JSON.stringify(result), {

@@ -277,7 +277,8 @@
                 }
                 @if (divBars.Count > 0)
                 {
-                    <svg viewBox="0 0 420 175" style="width:100%;height:auto;">
+                    var hasBreakdown = divBars.Any(b => b.HasBreakdown);
+                    <svg viewBox="0 0 420 185" style="width:100%;height:auto;">
                         @foreach (var gl in divGridLines)
                         {
                             <line x1="36" y1="@Sv(gl.Y)" x2="400" y2="@Sv(gl.Y)" stroke="#f0f2f5" stroke-width="1" />
@@ -285,13 +286,36 @@
                         }
                         @foreach (var bar in divBars)
                         {
-                            <rect x="@bar.X" y="@Sv(bar.Y)" width="52" height="@Sv(bar.H)" fill="@bar.Color" rx="4" />
-                            @SvgText(bar.X + 26, bar.Y - 5, "middle", 11, "#ccc", bar.Amount.ToString("N0"), bold: true)
-                            @SvgText(bar.X + 26, 145, "middle", 11, "#888", bar.Year.ToString())
+                            @if (bar.HasBreakdown)
+                            {
+                                @if (bar.HInterim > 0.5)
+                                {
+                                    <rect x="@bar.XInterim" y="@Sv(bar.YInterim)" width="28" height="@Sv(bar.HInterim)" fill="#64b5f6" rx="3" />
+                                    @SvgText(bar.XInterim + 14, bar.YInterim - 3, "middle", 8, "#aaa", bar.InterimAmt.ToString("N0"))
+                                }
+                                @if (bar.HFinal > 0.5)
+                                {
+                                    <rect x="@bar.XFinal" y="@Sv(bar.YFinal)" width="28" height="@Sv(bar.HFinal)" fill="#1e88e5" rx="3" />
+                                    @SvgText(bar.XFinal + 14, bar.YFinal - 3, "middle", 8, "#ccc", bar.FinalAmt.ToString("N0"))
+                                }
+                            }
+                            else
+                            {
+                                <rect x="@bar.XInterim" y="@Sv(bar.YFinal)" width="60" height="@Sv(bar.HFinal)" fill="#1e88e5" rx="3" />
+                                @SvgText(bar.XInterim + 30, bar.YFinal - 3, "middle", 9, "#ccc", bar.Total.ToString("N0"), bold: true)
+                            }
+                            @SvgText(bar.XCenter, 145, "middle", 10, "#888", bar.Year.ToString())
                             @if (bar.IsCurrentYear)
                             {
-                                @SvgText(bar.X + 26, 157, "middle", 9, "#e67e22", "(現時点)")
+                                @SvgText(bar.XCenter, 157, "middle", 8, "#e67e22", "(現時点)")
                             }
+                        }
+                        @if (hasBreakdown)
+                        {
+                            <rect x="105" y="165" width="10" height="10" fill="#64b5f6" rx="2"/>
+                            @SvgText(118, 174, "start", 9, "#888", "中間配当")
+                            <rect x="195" y="165" width="10" height="10" fill="#1e88e5" rx="2"/>
+                            @SvgText(208, 174, "start", 9, "#888", "期末配当")
                         }
                     </svg>
                 }
@@ -522,14 +546,20 @@
 
     // ---- 配当チャート用ヘルパー ----
 
-    private record DivBar(int X, double Y, double H, string Color, int Year, decimal Amount, bool IsCurrentYear);
+    // XInterim/XFinal: 各棒のX座標、XCenter: 年ラベル中心
+    private record DivGroupedBar(
+        int XInterim, int XFinal, int XCenter,
+        double YInterim, double HInterim,
+        double YFinal, double HFinal,
+        int Year, decimal Total, decimal InterimAmt, decimal FinalAmt,
+        bool IsCurrentYear, bool HasBreakdown);
 
-    private static readonly int[] DivBarX = [46, 114, 182, 250, 318];
-    private static readonly string[] DivBarColors = ["#90caf9", "#64b5f6", "#42a5f5", "#1e88e5", "#1565c0"];
+    // 各年グループのX開始位置（グループ幅72px、5グループ）
+    private static readonly int[] DivGroupX = [36, 108, 180, 252, 324];
     private const double DivBottom = 130.0;
     private const double DivHeight = 110.0;
 
-    private List<DivBar> GetDivBars()
+    private List<DivGroupedBar> GetDivBars()
     {
         var data = stock?.DividendHistory;
         if (data == null || data.Count == 0) return [];
@@ -539,8 +569,20 @@
         var currentYear = DateTime.Today.Year;
         return data.Select((d, i) =>
         {
-            var h = (double)(d.Amount / max) * DivHeight;
-            return new DivBar(DivBarX[offset + i], DivBottom - h, h, DivBarColors[offset + i], d.Year, d.Amount, d.Year == currentYear);
+            var hasBreakdown = d.InterimAmount > 0 && d.FinalAmount > 0;
+            var interim = hasBreakdown ? d.InterimAmount : 0m;
+            var final_ = hasBreakdown ? d.FinalAmount : d.Amount;
+            var hInterim = (double)(interim / max) * DivHeight;
+            var hFinal = (double)(final_ / max) * DivHeight;
+            var gx = DivGroupX[offset + i];
+            // 内訳あり: 左28px=中間、右28px=期末（間隔4px）
+            // 内訳なし: XInterimをfull-width棒の左端として使用（幅60px）
+            return new DivGroupedBar(
+                gx + 6, gx + 38, gx + 36,
+                DivBottom - hInterim, hInterim,
+                DivBottom - hFinal, hFinal,
+                d.Year, d.Amount, interim, final_,
+                d.Year == currentYear, hasBreakdown);
         }).ToList();
     }
 

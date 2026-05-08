@@ -53,6 +53,8 @@ public class DividendEntry
 {
     public int Year { get; set; }
     public decimal Amount { get; set; }
+    public decimal InterimAmount { get; set; }
+    public decimal FinalAmount { get; set; }
 }
 
 public class ChartPoint
