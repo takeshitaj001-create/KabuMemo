@@ -355,6 +355,25 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     align-items: flex-start;
 }
 
+/* 並び替えボタン */
+.sort-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.btn-sort {
+    background: #f0f2f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    padding: 1px 5px;
+    line-height: 1.4;
+    transition: background 0.15s;
+}
+.btn-sort:hover:not(:disabled) { background: #e4e6ea; }
+.btn-sort:disabled { opacity: 0.3; cursor: default; }
+
 /* 削除ボタン */
 .btn-delete {
     background: none;

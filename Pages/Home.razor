@@ -164,6 +164,7 @@
                     <thead>
                         <tr>
                             <th style="width:70px;"></th>
+                            <th style="width:40px;"></th>
                             <th style="width:200px;">銘柄</th>
                             <th style="width:150px;">現在値</th>
                             <th style="width:75px;">外部リンク</th>
@@ -173,12 +174,20 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var item in stocks)
+                        @for (int i = 0; i < stocks.Count; i++)
                         {
+                            var item = stocks[i];
+                            var index = i;
                             var alarm = IsAlarm(item);
                             <tr class="@(alarm ? "highlight-row" : "")">
                                 <td>
                                     <button class="btn-detail" @onclick="() => NavToDetail(item.Code)">詳細 ›</button>
+                                </td>
+                                <td>
+                                    <div class="sort-btns">
+                                        <button class="btn-sort" @onclick="() => MoveUp(index)" disabled="@(index == 0)">▲</button>
+                                        <button class="btn-sort" @onclick="() => MoveDown(index)" disabled="@(index == stocks.Count - 1)">▼</button>
+                                    </div>
                                 </td>
                                 <td>
                                     <div class="stock-code">@item.Code</div>
@@ -467,6 +476,20 @@
         await StockSvc.SaveAsync(stocks);
         showDeleteConfirm = false;
         deleteTargetCode = "";
+    }
+
+    private async Task MoveUp(int index)
+    {
+        if (index <= 0) return;
+        (stocks[index], stocks[index - 1]) = (stocks[index - 1], stocks[index]);
+        await StockSvc.SaveAsync(stocks);
+    }
+
+    private async Task MoveDown(int index)
+    {
+        if (index >= stocks.Count - 1) return;
+        (stocks[index], stocks[index + 1]) = (stocks[index + 1], stocks[index]);
+        await StockSvc.SaveAsync(stocks);
     }
 
     private void NavToDetail(string code) => Nav.NavigateTo("stock/" + code);
