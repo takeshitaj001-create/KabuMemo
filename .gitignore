@@ -6,7 +6,9 @@
 *.sln.docstates
 
 # VS Code
-.vscode/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 
 # JetBrains Rider
 .idea/

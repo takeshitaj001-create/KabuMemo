@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "anthropic.claude-code",
+    "ms-ceintl.vscode-language-pack-ja",
+    "ms-dotnettools.csdevkit",
+    "ms-dotnettools.csharp",
+    "ms-dotnettools.vscode-dotnet-runtime",
+    "ritwickdey.liveserver",
+    "yzhang.markdown-all-in-one"
+  ]
+}
