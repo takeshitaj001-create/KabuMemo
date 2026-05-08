@@ -313,18 +313,20 @@ async function handleDividends(code) {
   const data = await resp.json();
   const dividends = data?.chart?.result?.[0]?.events?.dividends ?? {};
 
-  // 暦年ごとに集計。7-12月払い=中間配当、1-6月払い=期末配当（3月決算企業向け）
+  // 年度（4月始まり）ごとに集計。7-12月払い=中間配当、1-6月払い=期末配当（3月決算企業向け）
+  // 例: 2024年9月払い→2024年度、2025年3月払い→2024年度
   const byYear = {};
   for (const entry of Object.values(dividends)) {
     const date = new Date(entry.date * 1000);
     const year = date.getFullYear();
     const month = date.getMonth() + 1; // 1-12
-    if (!byYear[year]) byYear[year] = { amount: 0, interimAmount: 0, finalAmount: 0 };
-    byYear[year].amount += entry.amount;
+    const fiscalYear = month >= 4 ? year : year - 1; // 4月始まり年度
+    if (!byYear[fiscalYear]) byYear[fiscalYear] = { amount: 0, interimAmount: 0, finalAmount: 0 };
+    byYear[fiscalYear].amount += entry.amount;
     if (month >= 7) {
-      byYear[year].interimAmount += entry.amount;
+      byYear[fiscalYear].interimAmount += entry.amount;
     } else {
-      byYear[year].finalAmount += entry.amount;
+      byYear[fiscalYear].finalAmount += entry.amount;
     }
   }
 

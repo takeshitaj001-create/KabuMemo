@@ -304,7 +304,7 @@
                                 <rect x="@bar.XInterim" y="@Sv(bar.YFinal)" width="60" height="@Sv(bar.HFinal)" fill="#1e88e5" rx="3" />
                                 @SvgText(bar.XInterim + 30, bar.YFinal - 3, "middle", 9, "#ccc", bar.Total.ToString("N0"), bold: true)
                             }
-                            @SvgText(bar.XCenter, 145, "middle", 10, "#888", bar.Year.ToString())
+                            @SvgText(bar.XCenter, 145, "middle", 10, "#888", $"{bar.Year % 100:D2}年度")
                             @if (bar.IsCurrentYear)
                             {
                                 @SvgText(bar.XCenter, 157, "middle", 8, "#e67e22", "(現時点)")
@@ -566,7 +566,9 @@
         var max = data.Max(d => d.Amount);
         if (max <= 0) return [];
         var offset = 5 - data.Count;
-        var currentYear = DateTime.Today.Year;
+        // 現在の年度（4月始まり）
+        var today = DateTime.Today;
+        var currentFiscalYear = today.Month >= 4 ? today.Year : today.Year - 1;
         return data.Select((d, i) =>
         {
             var hasBreakdown = d.InterimAmount > 0 && d.FinalAmount > 0;
@@ -575,14 +577,12 @@
             var hInterim = (double)(interim / max) * DivHeight;
             var hFinal = (double)(final_ / max) * DivHeight;
             var gx = DivGroupX[offset + i];
-            // 内訳あり: 左28px=中間、右28px=期末（間隔4px）
-            // 内訳なし: XInterimをfull-width棒の左端として使用（幅60px）
             return new DivGroupedBar(
                 gx + 6, gx + 38, gx + 36,
                 DivBottom - hInterim, hInterim,
                 DivBottom - hFinal, hFinal,
                 d.Year, d.Amount, interim, final_,
-                d.Year == currentYear, hasBreakdown);
+                d.Year == currentFiscalYear, hasBreakdown);
         }).ToList();
     }
 
@@ -607,8 +607,9 @@
         {
             var data = stock?.DividendHistory;
             if (data == null) return "—";
-            var currentYear = DateTime.Today.Year;
-            var filtered = data.Where(d => d.Year < currentYear).ToList();
+            var today = DateTime.Today;
+            var currentFiscalYear = today.Month >= 4 ? today.Year : today.Year - 1;
+            var filtered = data.Where(d => d.Year < currentFiscalYear).ToList();
             if (filtered.Count < 2) return "—";
             var first = (double)filtered.First().Amount;
             var last  = (double)filtered.Last().Amount;
