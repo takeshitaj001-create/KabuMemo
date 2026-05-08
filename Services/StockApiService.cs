@@ -15,6 +15,22 @@ public class StockApiService(HttpClient http)
     // private const string ProxyBaseUrl = "http://localhost:8787"; //ローカルテスト用
 
 
+    // ---- 銘柄検索（名称・コード両対応） ----
+
+    public async Task<List<YahooSearchQuote>> FetchSearchResultsAsync(string query)
+    {
+        try
+        {
+            var resp = await http.GetFromJsonAsync<YahooSearchResponse>(
+                $"{ProxyBaseUrl}/api/name/{Uri.EscapeDataString(query)}");
+            return resp?.Quotes ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
     // ---- 銘柄和名取得 ----
 
     public async Task<string?> FetchJapaneseNameAsync(string code)

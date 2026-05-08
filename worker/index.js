@@ -427,15 +427,55 @@ async function handleSummary(code) {
   });
 }
 
-async function handleName(code) {
+async function handleName(query) {
+  const decoded = decodeURIComponent(query);
+  const isCode = /^\d+$/.test(decoded);
+
+  if (isCode) {
+    // 数値コードは Yahoo Finance US 検索（確実に動作）
+    const resp = await fetch(
+      `https://query1.finance.yahoo.com/v1/finance/search` +
+      `?q=${encodeURIComponent(decoded + '.T')}&quotesCount=5&newsCount=0&lang=ja&region=JP`,
+      { headers: { 'User-Agent': UA, 'Accept': 'application/json' } }
+    );
+    if (!resp.ok) throw new Error(`Yahoo US Search HTTP ${resp.status}`);
+    const data = await resp.json();
+    return new Response(JSON.stringify(data), {
+      headers: { ...CORS, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // 日本語テキストは Yahoo Finance Japan の検索ページをスクレイプ
   const resp = await fetch(
-    `https://query1.finance.yahoo.com/v1/finance/search` +
-    `?q=${encodeURIComponent(code)}&quotesCount=1&newsCount=0&lang=ja&region=JP`,
-    { headers: { 'User-Agent': UA, 'Accept': 'application/json' } }
+    `https://finance.yahoo.co.jp/search/?query=${encodeURIComponent(decoded)}&category=stock`,
+    {
+      headers: {
+        'User-Agent': UA,
+        'Accept': 'text/html',
+        'Accept-Language': 'ja-JP,ja;q=0.9',
+      },
+    }
   );
-  if (!resp.ok) throw new Error(`Yahoo Search HTTP ${resp.status}`);
-  const data = await resp.json();
-  return new Response(JSON.stringify(data), {
+  if (!resp.ok) throw new Error(`Yahoo Japan Search HTTP ${resp.status}`);
+  const html = await resp.text();
+
+  const quotes = [];
+  const pattern = /"code":"(\d+)","marketName":"([^"]*)","name":"([^"]*)"/g;
+  let m;
+  while ((m = pattern.exec(html)) !== null) {
+    const [, code, market, name] = m;
+    if (!quotes.some(q => q.symbol === code + '.T')) {
+      quotes.push({
+        symbol: code + '.T',
+        shortname: name,
+        longname: name,
+        exchDisp: market,
+        quoteType: 'EQUITY',
+      });
+    }
+  }
+
+  return new Response(JSON.stringify({ quotes }), {
     headers: { ...CORS, 'Content-Type': 'application/json' },
   });
 }

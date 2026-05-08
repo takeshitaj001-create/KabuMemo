@@ -23,35 +23,93 @@
 {
     <div class="modal-overlay" @onclick="CloseAddModal">
         <div class="modal-box" @onclick:stopPropagation>
-            <h3 style="margin:0 0 16px;font-size:18px;">銘柄を追加</h3>
-            <div class="mb-3">
-                <label class="form-label">銘柄コード</label>
-                <div class="d-flex gap-2">
-                    <input class="form-control" @bind="newCode" placeholder="例: 7203" maxlength="10" />
-                    <button class="btn btn-outline-secondary"
-                            @onclick="SearchStockName"
-                            disabled="@isSearchingName"
-                            style="white-space:nowrap;min-width:72px;">
-                        @(isSearchingName ? "検索中…" : "名称検索")
-                    </button>
-                </div>
-                @if (!string.IsNullOrEmpty(nameSearchError))
-                {
-                    <div style="font-size:11px;color:#e03535;margin-top:4px;">@nameSearchError</div>
-                }
-            </div>
-            <div class="mb-3">
-                <label class="form-label">銘柄名</label>
-                <input class="form-control" @bind="newName" placeholder="例: トヨタ自動車" maxlength="50" />
-            </div>
-            @if (!string.IsNullOrEmpty(addError))
+            <h3 style="margin:0 0 12px;font-size:18px;">銘柄を追加</h3>
+
+            <ul class="nav nav-tabs mb-3" style="font-size:14px;">
+                <li class="nav-item">
+                    <button class="nav-link @(addTab == 0 ? "active" : "")" @onclick="() => addTab = 0">名称で検索</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(addTab == 1 ? "active" : "")" @onclick="() => addTab = 1">コードで追加</button>
+                </li>
+            </ul>
+
+            @if (addTab == 1)
             {
-                <div class="alert alert-danger py-1 px-2 mb-3" style="font-size:13px;">@addError</div>
+                <div class="mb-3">
+                    <label class="form-label">銘柄コード</label>
+                    <div class="d-flex gap-2">
+                        <input class="form-control" @bind="newCode" placeholder="例: 7203" maxlength="10" />
+                        <button class="btn btn-outline-secondary"
+                                @onclick="SearchStockName"
+                                disabled="@isSearchingName"
+                                style="white-space:nowrap;min-width:72px;">
+                            @(isSearchingName ? "検索中…" : "名称検索")
+                        </button>
+                    </div>
+                    @if (!string.IsNullOrEmpty(nameSearchError))
+                    {
+                        <div style="font-size:11px;color:#e03535;margin-top:4px;">@nameSearchError</div>
+                    }
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">銘柄名</label>
+                    <input class="form-control" @bind="newName" placeholder="例: トヨタ自動車" maxlength="50" />
+                </div>
+                @if (!string.IsNullOrEmpty(addError))
+                {
+                    <div class="alert alert-danger py-1 px-2 mb-3" style="font-size:13px;">@addError</div>
+                }
+                <div class="d-flex gap-2 justify-content-end">
+                    <button class="btn btn-secondary" @onclick="CloseAddModal">キャンセル</button>
+                    <button class="btn btn-primary" @onclick="AddStock">追加</button>
+                </div>
             }
-            <div class="d-flex gap-2 justify-content-end">
-                <button class="btn btn-secondary" @onclick="CloseAddModal">キャンセル</button>
-                <button class="btn btn-primary" @onclick="AddStock">追加</button>
-            </div>
+            else if (addTab == 0)
+            {
+                <div class="mb-3">
+                    <label class="form-label">企業名・キーワード</label>
+                    <div class="d-flex gap-2">
+                        <input class="form-control"
+                               value="@nameSearchQuery"
+                               @oninput="e => nameSearchQuery = e.Value?.ToString() ?? string.Empty"
+                               @onkeydown="OnNameSearchKeyDown"
+                               placeholder="例: トヨタ、ソニー" />
+                        <button class="btn btn-outline-primary"
+                                @onclick="SearchByName"
+                                disabled="@isSearchingByName"
+                                style="white-space:nowrap;min-width:64px;">
+                            @(isSearchingByName ? "検索中…" : "検索")
+                        </button>
+                    </div>
+                </div>
+                @if (nameSearchResults.Count > 0)
+                {
+                    <div class="list-group mb-3" style="max-height:220px;overflow-y:auto;font-size:13px;">
+                        @foreach (var q in nameSearchResults)
+                        {
+                            var sym = q.Symbol ?? "";
+                            var dispCode = sym.Contains('.') ? sym.Split('.')[0] : sym;
+                            <button class="list-group-item list-group-item-action py-2"
+                                    @onclick="() => SelectSearchResult(q)">
+                                <span style="font-weight:600;color:#0066cc;">@dispCode</span>
+                                <span style="margin-left:8px;">@(q.LongName ?? q.ShortName ?? sym)</span>
+                                @if (!string.IsNullOrEmpty(q.ExchDisp))
+                                {
+                                    <span style="margin-left:6px;font-size:11px;color:#999;">@q.ExchDisp</span>
+                                }
+                            </button>
+                        }
+                    </div>
+                }
+                else if (nameSearchDone && !isSearchingByName)
+                {
+                    <div style="font-size:13px;color:#888;margin-bottom:12px;">該当する銘柄が見つかりませんでした。</div>
+                }
+                <div class="d-flex gap-2 justify-content-end">
+                    <button class="btn btn-secondary" @onclick="CloseAddModal">キャンセル</button>
+                </div>
+            }
         </div>
     </div>
 }
@@ -200,11 +258,17 @@
 @code {
     private List<StockItem> stocks = [];
     private bool showAddModal = false;
+    private int addTab = 0;
     private string newCode = "";
     private string newName = "";
     private string addError = "";
     private string nameSearchError = "";
     private bool isSearchingName = false;
+
+    private string nameSearchQuery = "";
+    private bool isSearchingByName = false;
+    private bool nameSearchDone = false;
+    private List<YahooSearchQuote> nameSearchResults = [];
 
     private bool showDeleteConfirm = false;
     private string deleteTargetCode = "";
@@ -230,10 +294,14 @@
 
     private void OpenAddModal()
     {
+        addTab = 0;
         newCode = "";
         newName = "";
         addError = "";
         nameSearchError = "";
+        nameSearchQuery = "";
+        nameSearchResults.Clear();
+        nameSearchDone = false;
         showAddModal = true;
     }
 
@@ -264,6 +332,35 @@
             nameSearchError = "銘柄名を取得できませんでした。手動で入力してください。";
         }
         StateHasChanged();
+    }
+
+    private async Task SearchByName()
+    {
+        var q = nameSearchQuery.Trim();
+        if (string.IsNullOrEmpty(q)) return;
+        isSearchingByName = true;
+        nameSearchDone = false;
+        nameSearchResults.Clear();
+        StateHasChanged();
+
+        nameSearchResults = await ApiSvc.FetchSearchResultsAsync(q);
+        isSearchingByName = false;
+        nameSearchDone = true;
+        StateHasChanged();
+    }
+
+    private async Task OnNameSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await SearchByName();
+    }
+
+    private void SelectSearchResult(YahooSearchQuote q)
+    {
+        var sym = q.Symbol ?? "";
+        newCode = sym.Contains('.') ? sym.Split('.')[0] : sym;
+        newName = q.LongName ?? q.ShortName ?? "";
+        addError = "";
+        addTab = 1;
     }
 
     private async Task AddStock()
