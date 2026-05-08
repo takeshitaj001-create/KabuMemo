@@ -434,50 +434,77 @@ async function handleName(query) {
   const isCode = /^\d+$/.test(decoded);
 
   if (isCode) {
-    // 数値コードは Yahoo Finance US 検索（確実に動作）
+    // 数値コード: .T を付けて検索し、返ってきた quotes を .T のみにフィルタ
+    // Cloudflare IP から叩くと地域外銘柄（.SR 等）が優先されるため必須
     const resp = await fetch(
       `https://query1.finance.yahoo.com/v1/finance/search` +
-      `?q=${encodeURIComponent(decoded + '.T')}&quotesCount=5&newsCount=0&lang=ja&region=JP`,
+      `?q=${encodeURIComponent(decoded + '.T')}&quotesCount=10&newsCount=0&lang=ja&region=JP`,
       { headers: { 'User-Agent': UA, 'Accept': 'application/json' } }
     );
     if (!resp.ok) throw new Error(`Yahoo US Search HTTP ${resp.status}`);
     const data = await resp.json();
-    return new Response(JSON.stringify(data), {
+    const quotes = (data.quotes ?? []).filter(q => q.symbol?.endsWith('.T'));
+    // .T が一件も返らなかった場合はシンボルのみの候補を生成して返す
+    if (quotes.length === 0) {
+      return new Response(JSON.stringify({ quotes: [{ symbol: decoded + '.T', quoteType: 'EQUITY' }] }), {
+        headers: { ...CORS, 'Content-Type': 'application/json' },
+      });
+    }
+    return new Response(JSON.stringify({ quotes }), {
       headers: { ...CORS, 'Content-Type': 'application/json' },
     });
   }
 
-  // 日本語テキストは Yahoo Finance Japan の検索ページをスクレイプ
-  const resp = await fetch(
-    `https://finance.yahoo.co.jp/search/?query=${encodeURIComponent(decoded)}&category=stock`,
-    {
-      headers: {
-        'User-Agent': UA,
-        'Accept': 'text/html',
-        'Accept-Language': 'ja-JP,ja;q=0.9',
-      },
+  // 日本語テキスト: Yahoo Finance Japan の検索ページをスクレイプ（日本 IP では動作）
+  // Cloudflare の海外エッジからは HTML 構造が変わり 0 件になる場合があるため
+  // 結果が空のときは Yahoo Finance US にフォールバックする
+  try {
+    const jpResp = await fetch(
+      `https://finance.yahoo.co.jp/search/?query=${encodeURIComponent(decoded)}&category=stock`,
+      {
+        headers: {
+          'User-Agent': UA,
+          'Accept': 'text/html',
+          'Accept-Language': 'ja-JP,ja;q=0.9',
+        },
+      }
+    );
+    if (jpResp.ok) {
+      const html = await jpResp.text();
+      const quotes = [];
+      const pattern = /"code":"(\d+)","marketName":"([^"]*)","name":"([^"]*)"/g;
+      let m;
+      while ((m = pattern.exec(html)) !== null) {
+        const [, code, market, name] = m;
+        if (!quotes.some(q => q.symbol === code + '.T')) {
+          quotes.push({
+            symbol: code + '.T',
+            shortname: name,
+            longname: name,
+            exchDisp: market,
+            quoteType: 'EQUITY',
+          });
+        }
+      }
+      if (quotes.length > 0) {
+        return new Response(JSON.stringify({ quotes }), {
+          headers: { ...CORS, 'Content-Type': 'application/json' },
+        });
+      }
     }
+  } catch {}
+
+  // フォールバック: Yahoo Finance US で検索し .T のみ返す
+  // 日本語テキストは認識されにくいが、一部の英語対応銘柄名では有効
+  const usResp = await fetch(
+    `https://query1.finance.yahoo.com/v1/finance/search` +
+    `?q=${encodeURIComponent(decoded)}&quotesCount=10&newsCount=0&lang=ja&region=JP`,
+    { headers: { 'User-Agent': UA, 'Accept': 'application/json' } }
   );
-  if (!resp.ok) throw new Error(`Yahoo Japan Search HTTP ${resp.status}`);
-  const html = await resp.text();
-
-  const quotes = [];
-  const pattern = /"code":"(\d+)","marketName":"([^"]*)","name":"([^"]*)"/g;
-  let m;
-  while ((m = pattern.exec(html)) !== null) {
-    const [, code, market, name] = m;
-    if (!quotes.some(q => q.symbol === code + '.T')) {
-      quotes.push({
-        symbol: code + '.T',
-        shortname: name,
-        longname: name,
-        exchDisp: market,
-        quoteType: 'EQUITY',
-      });
-    }
-  }
-
-  return new Response(JSON.stringify({ quotes }), {
+  if (!usResp.ok) throw new Error(`Yahoo US Search HTTP ${usResp.status}`);
+  const usData = await usResp.json();
+  const usQuotes = (usData.quotes ?? []).filter(q => q.symbol?.endsWith('.T'));
+  return new Response(JSON.stringify({ quotes: usQuotes }), {
     headers: { ...CORS, 'Content-Type': 'application/json' },
   });
 }
