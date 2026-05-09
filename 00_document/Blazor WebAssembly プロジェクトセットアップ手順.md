@@ -4,11 +4,12 @@
 
 | ツール | バージョン | 確認コマンド |
 |---|---|---|
-| .NET SDK | 8.0 以上推奨 | `dotnet --version` |
+| .NET SDK | 10.0 以上推奨 | `dotnet --version` |
 | Git | 任意 | `git --version` |
 | VS Code または Visual Studio | 任意 | — |
 
 ### .NET SDK インストール
+
 https://dotnet.microsoft.com/download からインストーラーをダウンロードして実行。
 
 ---
@@ -16,8 +17,8 @@ https://dotnet.microsoft.com/download からインストーラーをダウンロ
 ## 1. プロジェクト作成
 
 ```bash
-dotnet new blazorwasm -o KabuMemoWeb
-cd KabuMemoWeb
+dotnet new blazorwasm -o KabuMemo
+cd KabuMemo
 ```
 
 ### 主なオプション
@@ -36,7 +37,7 @@ cd KabuMemoWeb
 dotnet run
 ```
 
-ブラウザで `https://localhost:5124`（または表示された URL）を開く。
+ブラウザで `http://localhost:5124`（または表示された URL）を開く。
 
 ホットリロードを使う場合:
 
@@ -49,56 +50,88 @@ dotnet watch
 ## 3. プロジェクト構成
 
 ```
-KabuMemoWeb/
+KabuMemo/
 ├── wwwroot/               # 静的ファイル（画像・CSS・index.html）
-│   └── index.html         # エントリーポイント
+│   ├── index.html         # エントリーポイント
+│   ├── css/               # スタイルシート
+│   └── lib/               # Bootstrap などのライブラリ
 ├── Pages/                 # 各画面の .razor ファイル
 │   ├── Home.razor
-│   └── Counter.razor
-├── Shared/                # 共通コンポーネント
-│   └── MainLayout.razor
+│   ├── StockDetail.razor
+│   └── NotFound.razor
+├── Layout/                # レイアウト・ナビゲーション
+│   ├── MainLayout.razor
+│   └── NavMenu.razor
 ├── App.razor              # ルーティング定義
+├── _Imports.razor         # グローバル using 宣言
 └── Program.cs             # DI・起動設定
+```
+
+> .NET 10 テンプレートでは `Shared/` フォルダが `Layout/` に変更された。
+
+---
+
+## 4. サービス登録（Program.cs）
+
+```csharp
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.RootComponents.Add<App>("#app");
+builder.RootComponents.Add<HeadOutlet>("head::after");
+
+// デフォルト HttpClient（ベースアドレスはホスト環境に合わせて自動設定）
+builder.Services.AddScoped(sp =>
+    new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+
+// 独自サービスの登録例
+builder.Services.AddScoped<StockService>();
+builder.Services.AddScoped(_ => new StockApiService(
+    new HttpClient { Timeout = TimeSpan.FromSeconds(10) }
+));
+
+await builder.Build().RunAsync();
 ```
 
 ---
 
-## 4. GitHub Pages 向けビルド
+## 5. GitHub Pages 向けビルド
 
-### 4-1. base href の修正
+### 5-1. base href の扱い
 
-`wwwroot/index.html` の `<base>` タグをリポジトリ名に合わせて変更する。
+開発時は `wwwroot/index.html` の `<base>` タグを `/` のままにしておく。
+GitHub Pages 向けの `base href` 書き換えは **CI（deploy.yml）側で自動実行**するため、
+手動での変更は不要。
 
 ```html
-<!-- 変更前 -->
+<!-- ローカル開発・ソース管理時はこのまま -->
 <base href="/" />
-
-<!-- 変更後（リポジトリ名: KabuMemoWeb の場合） -->
-<base href="/KabuMemoWeb/" />
 ```
 
-### 4-2. リリースビルド
+### 5-2. リリースビルド
 
 ```bash
 dotnet publish -c Release
 ```
 
-出力先: `bin/Release/net8.0/publish/wwwroot/`
+出力先: `bin/Release/net10.0/publish/wwwroot/`
 
-### 4-3. 404 対策（GitHub Pages 用）
+### 5-3. 404 対策（GitHub Pages 用）
 
 GitHub Pages は SPA のルーティングに対応していないため、`wwwroot/` に `404.html` を追加する。
+CI の `deploy.yml` でコピーしている場合は手動対応不要。
 
 ```bash
-# index.html を 404.html としてコピー
-cp wwwroot/index.html wwwroot/404.html
+# index.html を 404.html としてコピー（手動の場合）
+cp bin/Release/net10.0/publish/wwwroot/index.html bin/Release/net10.0/publish/wwwroot/404.html
 ```
 
 ---
 
-## 5. GitHub Actions による自動デプロイ
+## 6. GitHub Actions による自動デプロイ
 
-`.github/workflows/deploy.yml` を作成する。
+`.github/workflows/deploy.yml` の構成（本プロジェクト実績）:
 
 ```yaml
 name: Deploy to GitHub Pages
@@ -106,64 +139,93 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main
+      - master
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.x'
 
       - name: Publish
-        run: dotnet publish -c Release -o publish
+        run: dotnet publish -c Release
 
-      - name: Copy 404.html
-        run: cp publish/wwwroot/index.html publish/wwwroot/404.html
+      - name: Set base href for GitHub Pages
+        run: |
+          sed -i 's|<base href="[^"]*"|<base href="/KabuMemo/"|g' \
+            bin/Release/net10.0/publish/wwwroot/index.html
+          grep 'base href' bin/Release/net10.0/publish/wwwroot/index.html
 
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: publish/wwwroot
+          path: bin/Release/net10.0/publish/wwwroot
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 ```
 
 ### GitHub リポジトリ側の設定
 
 1. リポジトリの **Settings → Pages**
-2. Source を `gh-pages` ブランチに設定
+2. Source を **GitHub Actions** に設定（`gh-pages` ブランチではなく Actions を使う）
 
 ---
 
-## 6. 外部 API の呼び出し（HttpClient）
+## 7. 外部 API の呼び出し（HttpClient）
 
-`Program.cs` に HttpClient を登録する。
+CORS 制約があるため、呼び出し可能な API は限られる。
+外部 API 専用の `HttpClient` を登録する場合は `Program.cs` で直接インスタンスを渡す。
 
 ```csharp
-builder.Services.AddScoped(sp =>
-    new HttpClient { BaseAddress = new Uri("https://api.example.com") });
+// Program.cs
+builder.Services.AddScoped(_ => new StockApiService(
+    new HttpClient { Timeout = TimeSpan.FromSeconds(10) }
+));
 ```
 
-コンポーネントから呼び出す例（J-Quants API など）:
+コンポーネントからの呼び出し例:
 
 ```csharp
-@inject HttpClient Http
+@inject StockApiService StockApi
 
 @code {
     protected override async Task OnInitializedAsync()
     {
-        var result = await Http.GetFromJsonAsync<MyData>("/v2/equities/bars/daily?code=13010");
+        var data = await StockApi.GetDailyBarsAsync("13010");
     }
 }
 ```
 
 ---
 
-## 7. localStorage の利用
+## 8. localStorage の利用
 
 JavaScript Interop を使って `localStorage` にアクセスする。
 
@@ -171,8 +233,11 @@ JavaScript Interop を使って `localStorage` にアクセスする。
 @inject IJSRuntime JS
 
 @code {
-    await JS.InvokeVoidAsync("localStorage.setItem", "apiKey", value);
-    var apiKey = await JS.InvokeAsync<string>("localStorage.getItem", "apiKey");
+    // 保存
+    await JS.InvokeVoidAsync("localStorage.setItem", "key", value);
+
+    // 読み込み
+    var value = await JS.InvokeAsync<string>("localStorage.getItem", "key");
 }
 ```
 

@@ -8,8 +8,10 @@ KabuMemo の株価取得・IR情報取得は、CORS 制約を回避するため�
 ブラウザ（Blazor WASM）
     ↓  CORS なし
 Cloudflare Worker（kabumemo-proxy）
-    ↓  Cookie+Crumb 認証
-Yahoo Finance API / irbank.net
+    ├─ Cookie+Crumb 認証 → Yahoo Finance API（株価・チャート・配当・企業概要）
+    ├─ スクレイピング   → Yahoo Finance Japan（銘柄名検索）
+    ├─ 翻訳            → MyMemory API（企業概要を日本語に翻訳）
+    └─ スクレイピング   → irbank.net（適時開示）
 ```
 
 ## 事前準備
@@ -55,14 +57,14 @@ npx wrangler deploy
 
 ### 4. URL を設定ファイルに反映
 
-`Services/StockApiService.cs` の 15 行目を、デプロイで表示された URL に書き換えます。
+`Services/StockApiService.cs` の 14 行目を、デプロイで表示された URL に書き換えます。
 
 ```csharp
 // 変更前
 private const string ProxyBaseUrl = "https://kabumemo-proxy.YOUR_SUBDOMAIN.workers.dev";
 
 // 変更後（例）
-private const string ProxyBaseUrl = "https://kabumemo-proxy.XXXX.workers.dev";
+private const string ProxyBaseUrl = "https://kabumemo-proxy.kabumemo.workers.dev";
 ```
 
 ### 5. Blazor アプリを再ビルド・デプロイ
@@ -97,9 +99,12 @@ private const string ProxyBaseUrl = "http://localhost:8787";
 
 | エンドポイント | 用途 |
 |---|---|
-| `GET /api/quote/{code}` | 株価取得（Yahoo Finance v7） |
-| `GET /api/tdnet/{code}` | 適時開示取得（irbank.net） |
-| `GET /api/name/{code}` | 銘柄和名取得（Yahoo Finance Search） |
+| `GET /api/quote/{code}` | 株価取得（Yahoo Finance v7、v8フォールバックあり） |
+| `GET /api/chart/{code}` | 株価チャート取得（Yahoo Finance v8、1年間の日次データ） |
+| `GET /api/dividends/{code}` | 配当推移取得（Yahoo Finance v8、過去5年・年度集計） |
+| `GET /api/summary/{code}` | 企業概要取得（Yahoo Finance quoteSummary + MyMemory 日本語翻訳） |
+| `GET /api/tdnet/{code}` | 適時開示取得（irbank.net スクレイピング） |
+| `GET /api/name/{code}` | 銘柄名・コード検索（Yahoo Finance Japan / US Search） |
 
 ## 更新・再デプロイ
 
