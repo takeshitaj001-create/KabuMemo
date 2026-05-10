@@ -18,325 +18,343 @@
     else
     {
 
-    <div class="detail-header">
-        <div class="stock-title">
-            <h2 style="margin:0;font-size:22px;font-weight:700;color:#fff;">@stock.Code</h2>
-            <p style="margin:4px 0 0;font-size:13px;color:#aab;">@stock.Name</p>
-        </div>
-        <div class="detail-price-block">
-            @if (stock.CurrentPrice.HasValue)
-            {
-                <div class="detail-price">¥@stock.CurrentPrice.Value.ToString("N0")</div>
-                <div class="detail-change @stock.PriceDirection">
-                    @(stock.PriceDirection == "up" ? "▲" : stock.PriceDirection == "down" ? "▼" : "—")
-                    @(stock.PriceChange.HasValue ? Math.Abs(stock.PriceChange.Value).ToString("N0") : "")
-                    @(stock.PriceChangeRate.HasValue ? $"({(stock.PriceChangeRate.Value >= 0 ? "+" : "")}{stock.PriceChangeRate.Value:F2}%)" : "")
-                </div>
-            }
-            else
-            {
-                <div class="detail-price" style="color:#aab;">—</div>
-                <div class="detail-change flat">株価取得予定</div>
-            }
-        </div>
-    </div>
-
-    <div class="link-row">
-        <a class="ext-link-box yahoo" href="@YahooUrl" target="_blank" rel="noopener noreferrer">
-            <span class="link-logo">Y!</span>
-            <span class="link-body">
-                <span class="link-label">ヤフーファイナンス<br /><strong>@Code @stock.Name</strong></span>
-                <span class="ext-badge">外部サイト・新しいタブで開く</span>
-            </span>
-            <span class="link-arrow">↗</span>
-        </a>
-        <a class="ext-link-box minkabu" href="@MinkabuUrl" target="_blank" rel="noopener noreferrer">
-            <span class="link-logo">み</span>
-            <span class="link-body">
-                <span class="link-label">みんかぶ<br /><strong>@Code @stock.Name</strong></span>
-                <span class="ext-badge">外部サイト・新しいタブで開く</span>
-            </span>
-            <span class="link-arrow">↗</span>
-        </a>
-        <a class="ext-link-box kabutan" href="@KabutanUrl" target="_blank" rel="noopener noreferrer">
-            <span class="link-logo">株</span>
-            <span class="link-body">
-                <span class="link-label">株探（かぶたん）<br /><strong>@Code @stock.Name</strong></span>
-                <span class="ext-badge">外部サイト・新しいタブで開く</span>
-            </span>
-            <span class="link-arrow">↗</span>
-        </a>
-    </div>
-
-    <div class="detail-memo-card">
-        <h3 style="margin:0 0 10px;font-size:15px;">メモ</h3>
-        <textarea class="memo-input" rows="4" placeholder="この銘柄に関するメモを自由に入力できます…"
-                  style="width:100%;min-height:80px;"
-                  value="@stock.Memo"
-                  @oninput="e => stock.Memo = e.Value?.ToString() ?? string.Empty"
-                  @onblur="SaveAsync"></textarea>
-        <div class="tag-row">
-            <button class="tag-btn buy @(stock.IsBuyCandidate ? "on" : "off")"
-                    @onclick="ToggleBuy">購入検討</button>
-            <button class="tag-btn hold @(stock.IsHolding ? "on" : "off")"
-                    @onclick="ToggleHold">保有中</button>
-            <button class="tag-btn alarm @(IsAlarm ? "on" : "off")" disabled>⚠️ アラーム</button>
-        </div>
-        <div class="alarm-date-row">
-            <label>アラーム日</label>
-            <input type="date" class="date-input"
-                   value="@stock.AlarmDate"
-                   @oninput="e => { stock.AlarmDate = e.Value?.ToString(); }"
-                   @onblur="SaveAsync" />
-        </div>
-    </div>
-
-    <div class="detail-main-layout">
-        <div class="detail-card card-basic">
-            <h3>基本情報・参考指標</h3>
-            <div class="info-grid">
-                <div class="info-section-label">市場情報</div>
-                <div class="info-row"><span class="label">市場</span><span class="value">@(stock.Exchange ?? "—")</span></div>
-                <div class="info-row"><span class="label">時価総額</span><span class="value">@FormatMarketCap(stock.MarketCap)</span></div>
-                <div class="info-row"><span class="label">単元株数</span><span class="value">@(stock.LotSize.HasValue ? $"{stock.LotSize.Value:N0}株" : "—")</span></div>
-                <div class="info-row"><span class="label">最低購入代金</span><span class="value">@FormatMinPurchase(stock.CurrentPrice, stock.LotSize)</span></div>
-
-                <div class="info-section-label">決算</div>
-                <div class="info-row">
-                    <span class="label">次回決算発表予定日</span>
-                    <span class="value" style="@EarningsDateStyle(stock.NextEarningsDate)">@FormatEarningsDate(stock.NextEarningsDate)</span>
-                </div>
-
-                <div class="info-section-label">株価指標</div>
-                <div class="info-row"><span class="label">PER（会社予想）</span><span class="value">@FormatDecimal(stock.ForwardPE, "倍")</span></div>
-                <div class="info-row"><span class="label">PBR</span><span class="value">@FormatDecimal(stock.PriceToBook, "倍")</span></div>
-                <div class="info-row"><span class="label">EPS（1株利益）</span><span class="value">@FormatDecimal(stock.EPS, "円")</span></div>
-                <div class="info-row"><span class="label">BPS（1株純資産）</span><span class="value">@FormatDecimal(stock.BPS, "円")</span></div>
-
-                <div class="info-section-label">配当</div>
-                <div class="info-row"><span class="label">配当利回り</span><span class="value">@FormatPercent(stock.DividendYield)</span></div>
-                <div class="info-row"><span class="label">1株配当</span><span class="value">@FormatDecimal(stock.DividendRate, "円")</span></div>
-
-                <div class="info-section-label">52週レンジ</div>
-                <div class="info-row"><span class="label">52週高値</span><span class="value">@FormatPrice(stock.WeekHigh52)</span></div>
-                <div class="info-row"><span class="label">52週安値</span><span class="value">@FormatPrice(stock.WeekLow52)</span></div>
+        <div class="detail-header">
+            <div class="stock-title">
+                <h2 style="margin:0;font-size:22px;font-weight:700;color:#fff;">@stock.Code</h2>
+                <p style="margin:4px 0 0;font-size:13px;color:#aab;">@stock.Name</p>
             </div>
-        </div>
-
-        <div class="detail-card card-stock">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                <h3 style="margin:0;">株価情報</h3>
-                <button class="btn-refresh-sm"
-                        @onclick="async () => { _ = RefreshChart(); await RefreshPrice(); }"
-                        disabled="@isRefreshing">
-                    @(isRefreshing ? "取得中…" : "🔄 更新")
-                </button>
-            </div>
-            @if (priceError)
-            {
-                <div class="error-log-panel" style="margin-bottom:10px;">
-                    <div class="error-log-header">
-                        <span>⚠️ 株価取得エラー</span>
-                        <button class="error-log-clear" @onclick="ClearPriceError">✕</button>
-                    </div>
-                    <div class="error-log-body">
-                        <div class="error-log-line">@priceErrorMessage</div>
-                        <div class="error-log-line" style="margin-top:4px;">
-                            → <a href="@YahooUrl" target="_blank" rel="noopener noreferrer" style="color:#90caf9;">Yahoo Finance で確認 ↗</a>
-                        </div>
-                    </div>
-                </div>
-            }
-            <div class="chart-period-row">
-                @foreach (var p in new[]{"1M","3M","6M","1Y"})
+            <div class="detail-price-block">
+                @if (stock.CurrentPrice.HasValue)
                 {
-                    var period = p;
-                    <button class="chart-period-btn @(chartPeriod == period ? "active" : "")"
-                            @onclick="() => chartPeriod = period">@period</button>
-                }
-            </div>
-            @{
-                var chartData = GetFilteredChartData();
-            }
-            @if (chartData.Count >= 2)
-            {
-                var cMin   = chartData.Min(p => p.Close);
-                var cMax   = chartData.Max(p => p.Close);
-                var line   = BuildChartPoints(chartData, cMin, cMax);
-                var fill   = line + $" {Sv(295)},{Sv(ChartYBottom)} {Sv(5)},{Sv(ChartYBottom)}";
-                var lastY  = ChartPriceToY(chartData.Last().Close, cMin, cMax);
-                var up     = chartData.Last().Close >= chartData.First().Close;
-                var stroke = up ? "#0066cc" : "#e03535";
-                var area   = up ? "rgba(0,102,204,0.1)" : "rgba(224,53,53,0.08)";
-                <div class="chart-area">
-                    <svg viewBox="0 0 300 100" style="width:100%;height:140px;display:block;">
-                        <polyline points="@fill" fill="@area" stroke="none" />
-                        <polyline points="@line" fill="none" stroke="@stroke" stroke-width="1.8" />
-                        <circle cx="295" cy="@Sv(lastY)" r="3" fill="@stroke" />
-                        @SvgText(5, 13, "start", 9, "#888", cMax.ToString("N0"))
-                        @SvgText(5, 88, "start", 9, "#888", cMin.ToString("N0"))
-                    </svg>
-                </div>
-            }
-            else
-            {
-                <div class="chart-placeholder">
-                    <span style="color:#aaa;font-size:13px;">
-                        @(isRefreshingChart ? "チャートデータを取得中…" : "📊 チャートデータ未取得")
-                    </span>
-                </div>
-            }
-            <div class="info-row">
-                <span class="label">始値</span>
-                <span class="value">@FormatPrice(stock.OpenPrice)</span>
-            </div>
-            <div class="info-row">
-                <span class="label">高値</span>
-                <span class="value" style="@(stock.HighPrice.HasValue ? "color:#e03535;" : "")">@FormatPrice(stock.HighPrice)</span>
-            </div>
-            <div class="info-row">
-                <span class="label">安値</span>
-                <span class="value" style="@(stock.LowPrice.HasValue ? "color:#1565c0;" : "")">@FormatPrice(stock.LowPrice)</span>
-            </div>
-            <div class="info-row">
-                <span class="label">前日終値</span>
-                <span class="value">@FormatPrice(stock.PreviousClose)</span>
-            </div>
-            <div class="info-row">
-                <span class="label">出来高</span>
-                <span class="value">@(stock.Volume.HasValue ? stock.Volume.Value.ToString("N0") : "—")</span>
-            </div>
-            @if (!string.IsNullOrEmpty(stock.LastUpdated))
-            {
-                <div style="font-size:10px;color:#bbb;margin-top:8px;text-align:right;">取得: @stock.LastUpdated</div>
-            }
-        </div>
-
-        <div class="company-overview-card card-overview">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                <h3 style="margin:0;">企業概要</h3>
-                <button class="btn-refresh-sm" @onclick="RefreshSummary" disabled="@isRefreshingSummary">
-                    @(isRefreshingSummary ? "取得中…" : "🔄 更新")
-                </button>
-            </div>
-            @if (summaryError)
-            {
-                <div class="error-log-panel" style="margin-bottom:10px;">
-                    <div class="error-log-header">
-                        <span>⚠️ 企業概要取得エラー</span>
-                        <button class="error-log-clear" @onclick="() => summaryError = false">✕</button>
+                    <div class="detail-price">¥@stock.CurrentPrice.Value.ToString("N0")</div>
+                    <div class="detail-change @stock.PriceDirection">
+                        @(stock.PriceDirection == "up" ? "▲" : stock.PriceDirection == "down" ? "▼" : "—")
+                        @(stock.PriceChange.HasValue? Math.Abs(stock.PriceChange.Value).ToString("N0") : "")
+                        @(stock.PriceChangeRate.HasValue ? $"({(stock.PriceChangeRate.Value >= 0 ? "+" :
+          "")}{stock.PriceChangeRate.Value:F2}%)" : "")
                     </div>
-                    <div class="error-log-body">
-                        <div class="error-log-line">@summaryErrorMessage</div>
-                    </div>
-                </div>
-            }
-            @if (!string.IsNullOrEmpty(stock.CompanyDescription))
-            {
-                <p style="font-size:13px;color:#ccc;line-height:1.7;margin:0 0 12px;">@stock.CompanyDescription</p>
-            }
-            else if (!isRefreshingSummary)
-            {
-                <p style="color:#666;font-size:13px;margin:0 0 12px;">企業概要を取得するには更新ボタンを押してください。</p>
-            }
-            <div class="meta-row">
-                <span>従業員 <strong style="color:#ddd;">@(stock.Employees.HasValue ? $"{stock.Employees.Value:N0}人" : "—")</strong></span>
-                <span>所在地 <strong style="color:#ddd;">@FormatLocation(stock.CompanyCity, stock.CompanyCountry)</strong></span>
-            </div>
-        </div>
-
-<div class="dividend-card card-dividend">
-            <div class="dividend-card-header">
-                <h3>配当推移（過去5年）</h3>
-                <div style="display:flex;align-items:center;gap:12px;">
-                    <div class="cagr-badge">
-                        <span class="cagr-label">CAGR（年平均成長率・当年除く）</span>
-                        <span class="cagr-value">@DivCagrText <span class="cagr-unit">/年</span></span>
-                    </div>
-                    <button class="btn-refresh-sm" @onclick="RefreshDividends" disabled="@isRefreshingDividends">
-                        @(isRefreshingDividends ? "取得中…" : "🔄 更新")
-                    </button>
-                </div>
-            </div>
-            @if (dividendError)
-            {
-                <div class="error-log-panel" style="margin-bottom:10px;">
-                    <div class="error-log-header">
-                        <span>⚠️ 配当データ取得エラー</span>
-                        <button class="error-log-clear" @onclick="() => dividendError = false">✕</button>
-                    </div>
-                    <div class="error-log-body">
-                        <div class="error-log-line">@dividendErrorMessage</div>
-                    </div>
-                </div>
-            }
-            <div class="dividend-chart">
-                @{
-                    var divBars = GetDivBars();
-                    var divGridLines = GetDivGridLines();
-                }
-                @if (divBars.Count > 0)
-                {
-                    var hasBreakdown = divBars.Any(b => b.HasBreakdown);
-                    <svg viewBox="0 0 420 185" style="width:100%;height:auto;">
-                        @foreach (var gl in divGridLines)
-                        {
-                            <line x1="36" y1="@Sv(gl.Y)" x2="400" y2="@Sv(gl.Y)" stroke="#f0f2f5" stroke-width="1" />
-                            @SvgText(30, gl.Y + 4, "end", 9, "#bbb", gl.Label)
-                        }
-                        @foreach (var bar in divBars)
-                        {
-                            @if (bar.HasBreakdown)
-                            {
-                                @if (bar.HInterim > 0.5)
-                                {
-                                    <rect x="@bar.XInterim" y="@Sv(bar.YInterim)" width="28" height="@Sv(bar.HInterim)" fill="#64b5f6" rx="3" />
-                                    @SvgText(bar.XInterim + 14, bar.YInterim - 3, "middle", 8, "#aaa", bar.InterimAmt.ToString("N0"))
-                                }
-                                @if (bar.HFinal > 0.5)
-                                {
-                                    <rect x="@bar.XFinal" y="@Sv(bar.YFinal)" width="28" height="@Sv(bar.HFinal)" fill="#1e88e5" rx="3" />
-                                    @SvgText(bar.XFinal + 14, bar.YFinal - 3, "middle", 8, "#ccc", bar.FinalAmt.ToString("N0"))
-                                }
-                            }
-                            else
-                            {
-                                <rect x="@bar.XInterim" y="@Sv(bar.YFinal)" width="60" height="@Sv(bar.HFinal)" fill="#1e88e5" rx="3" />
-                                @SvgText(bar.XInterim + 30, bar.YFinal - 3, "middle", 9, "#ccc", bar.Total.ToString("N0"), bold: true)
-                            }
-                            @SvgText(bar.XCenter, 145, "middle", 10, "#888", $"{bar.Year % 100:D2}年度")
-                            @if (bar.IsCurrentYear)
-                            {
-                                @SvgText(bar.XCenter, 157, "middle", 8, "#e67e22", "(現時点)")
-                            }
-                        }
-                        @if (hasBreakdown)
-                        {
-                            <rect x="105" y="165" width="10" height="10" fill="#64b5f6" rx="2"/>
-                            @SvgText(118, 174, "start", 9, "#888", "中間配当")
-                            <rect x="195" y="165" width="10" height="10" fill="#1e88e5" rx="2"/>
-                            @SvgText(208, 174, "start", 9, "#888", "期末配当")
-                        }
-                    </svg>
-                }
-                else if (isRefreshingDividends)
-                {
-                    <div style="text-align:center;padding:30px 0;color:#888;font-size:13px;">配当データを取得中…</div>
-                }
-                else if (stock?.DividendHistory != null && stock.DividendHistory.Count == 0)
-                {
-                    <div style="text-align:center;padding:30px 0;color:#888;font-size:13px;">配当データなし（無配または未対応銘柄）</div>
                 }
                 else
                 {
-                    <div style="text-align:center;padding:30px 0;color:#666;font-size:13px;">配当データを取得するには更新ボタンを押してください。</div>
+                    <div class="detail-price" style="color:#aab;">—</div>
+                    <div class="detail-change flat">株価取得予定</div>
                 }
             </div>
         </div>
-    </div>
 
-    } @* end else *@
-</div>
+        <div class="link-row">
+            <a class="ext-link-box yahoo" href="@YahooUrl" target="_blank" rel="noopener noreferrer">
+                <span class="link-logo">Y!</span>
+                <span class="link-body">
+                    <span class="link-label">ヤフーファイナンス<br /><strong>@Code @stock.Name</strong></span>
+                    <span class="ext-badge">外部サイト・新しいタブで開く</span>
+                </span>
+                <span class="link-arrow">↗</span>
+            </a>
+            <a class="ext-link-box minkabu" href="@MinkabuUrl" target="_blank" rel="noopener noreferrer">
+                <span class="link-logo">み</span>
+                <span class="link-body">
+                    <span class="link-label">みんかぶ<br /><strong>@Code @stock.Name</strong></span>
+                    <span class="ext-badge">外部サイト・新しいタブで開く</span>
+                </span>
+                <span class="link-arrow">↗</span>
+            </a>
+            <a class="ext-link-box kabutan" href="@KabutanUrl" target="_blank" rel="noopener noreferrer">
+                <span class="link-logo">株</span>
+                <span class="link-body">
+                    <span class="link-label">株探（かぶたん）<br /><strong>@Code @stock.Name</strong></span>
+                    <span class="ext-badge">外部サイト・新しいタブで開く</span>
+                </span>
+                <span class="link-arrow">↗</span>
+            </a>
+        </div>
+
+        <div class="detail-memo-card">
+            <h3 style="margin:0 0 10px;font-size:15px;">メモ</h3>
+            <textarea class="memo-input" rows="6" placeholder="この銘柄に関するメモを自由に入力できます…" style="width:100%;min-height:80px;"
+                      value="@stock.Memo" @oninput="e => stock.Memo = e.Value?.ToString() ?? string.Empty"
+                      @onblur="SaveAsync"></textarea>
+            <div class="tag-row">
+                <button class="tag-btn buy @(stock.IsBuyCandidate ? "on" : "off")" @onclick="ToggleBuy">購入検討</button>
+                <button class="tag-btn hold @(stock.IsHolding ? "on" : "off")" @onclick="ToggleHold">保有中</button>
+                <button class="tag-btn alarm @(IsAlarm ? "on" : "off")" disabled>⚠️ アラーム</button>
+            </div>
+            <div class="alarm-date-row">
+                <label>アラーム日</label>
+                <input type="date" class="date-input" value="@stock.AlarmDate"
+                       @oninput="e => { stock.AlarmDate = e.Value?.ToString(); }" @onblur="SaveAsync" />
+            </div>
+        </div>
+
+        <div class="detail-main-layout">
+            <div class="detail-card card-basic">
+                <h3>基本情報・参考指標</h3>
+                <div class="info-grid">
+                    <div class="info-section-label">市場情報</div>
+                    <div class="info-row"><span class="label">市場</span><span class="value">@(stock.Exchange ?? "—")</span>
+                    </div>
+                    <div class="info-row"><span class="label">時価総額</span><span
+                        class="value">@FormatMarketCap(stock.MarketCap)</span></div>
+                        <div class="info-row"><span class="label">単元株数</span><span class="value">@(stock.LotSize.HasValue ?
+                                                                                $"{stock.LotSize.Value:N0}株" : "—")</span></div>
+                            <div class="info-row"><span class="label">最低購入代金</span><span
+                                class="value">@FormatMinPurchase(stock.CurrentPrice, stock.LotSize)</span></div>
+
+                                <div class="info-section-label">決算</div>
+                                <div class="info-row">
+                                    <span class="label">次回決算発表予定日</span>
+                                    <span class="value"
+                                          style="@EarningsDateStyle(stock.NextEarningsDate)">@FormatEarningsDate(stock.NextEarningsDate)</span>
+                                </div>
+
+                                <div class="info-section-label">株価指標</div>
+                                <div class="info-row"><span class="label">PER（会社予想）</span><span
+                                    class="value">@FormatDecimal(stock.ForwardPE, "倍")</span></div>
+                                    <div class="info-row"><span class="label">PBR</span><span
+                                        class="value">@FormatDecimal(stock.PriceToBook, "倍")</span></div>
+                                        <div class="info-row"><span class="label">EPS（1株利益）</span><span class="value">@FormatDecimal(stock.EPS,
+                                                                                             "円")</span></div>
+                                            <div class="info-row"><span class="label">BPS（1株純資産）</span><span class="value">@FormatDecimal(stock.BPS,
+                                                                                                           "円")</span></div>
+
+                                                <div class="info-section-label">配当</div>
+                                                <div class="info-row"><span class="label">配当利回り</span><span
+                                                    class="value">@FormatPercent(stock.DividendYield)</span></div>
+                                                    <div class="info-row"><span class="label">1株配当</span><span
+                                                        class="value">@FormatDecimal(stock.DividendRate, "円")</span></div>
+
+                                                        <div class="info-section-label">52週レンジ</div>
+                                                        <div class="info-row"><span class="label">52週高値</span><span
+                                                            class="value">@FormatPrice(stock.WeekHigh52)</span></div>
+                                                            <div class="info-row"><span class="label">52週安値</span><span
+                                                                class="value">@FormatPrice(stock.WeekLow52)</span></div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="detail-card card-stock">
+                                                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                                                                <h3 style="margin:0;">株価情報</h3>
+                                                                <button class="btn-refresh-sm" @onclick="async () => { _ = RefreshChart(); await RefreshPrice(); }"
+                                                                        disabled="@isRefreshing">
+                                                                    @(isRefreshing ? "取得中…" : "🔄 更新")
+                                                                </button>
+                                                            </div>
+                                                            @if (priceError)
+                                                            {
+                                                                <div class="error-log-panel" style="margin-bottom:10px;">
+                                                                    <div class="error-log-header">
+                                                                        <span>⚠️ 株価取得エラー</span>
+                                                                        <button class="error-log-clear" @onclick="ClearPriceError">✕</button>
+                                                                    </div>
+                                                                    <div class="error-log-body">
+                                                                        <div class="error-log-line">@priceErrorMessage</div>
+                                                                        <div class="error-log-line" style="margin-top:4px;">
+                                                                            → <a href="@YahooUrl" target="_blank" rel="noopener noreferrer" style="color:#90caf9;">Yahoo
+                                                                            Finance で確認 ↗</a>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            }
+                                                            <div class="chart-period-row">
+                                                                @foreach (var p in new[] { "1M", "3M", "6M", "1Y" })
+                                                                {
+                                                                    var period = p;
+                                                                    <button class="chart-period-btn @(chartPeriod == period ? "active" : "")"
+                                                                            @onclick="() => chartPeriod = period">@period</button>
+                                                                }
+                                                            </div>
+                                                            @{
+                                                                var chartData = GetFilteredChartData();
+                                                            }
+                                                            @if (chartData.Count >= 2)
+                                                            {
+                                                                var cMin = chartData.Min(p => p.Close);
+                                                                var cMax = chartData.Max(p => p.Close);
+                                                                var line = BuildChartPoints(chartData, cMin, cMax);
+                                                                var fill = line + $" {Sv(295)},{Sv(ChartYBottom)} {Sv(5)},{Sv(ChartYBottom)}";
+                                                                var lastY = ChartPriceToY(chartData.Last().Close, cMin, cMax);
+                                                                var up = chartData.Last().Close >= chartData.First().Close;
+                                                                var stroke = up ? "#0066cc" : "#e03535";
+                                                                var area = up ? "rgba(0,102,204,0.1)" : "rgba(224,53,53,0.08)";
+                                                                <div class="chart-area">
+                                                                    <svg viewBox="0 0 300 100" style="width:100%;height:140px;display:block;">
+                                                                        <polyline points="@fill" fill="@area" stroke="none" />
+                                                                        <polyline points="@line" fill="none" stroke="@stroke" stroke-width="1.8" />
+                                                                        <circle cx="295" cy="@Sv(lastY)" r="3" fill="@stroke" />
+                                                                        @SvgText(5, 13, "start", 9, "#888", cMax.ToString("N0"))
+                                                                        @SvgText(5, 88, "start", 9, "#888", cMin.ToString("N0"))
+                                                                    </svg>
+                                                                </div>
+                                                            }
+                                                            else
+                                                            {
+                                                                <div class="chart-placeholder">
+                                                                    <span style="color:#aaa;font-size:13px;">
+                                                                        @(isRefreshingChart ? "チャートデータを取得中…" : "📊 チャートデータ未取得")
+                                                                    </span>
+                                                                </div>
+                                                            }
+                                                            <div class="info-row">
+                                                                <span class="label">始値</span>
+                                                                <span class="value">@FormatPrice(stock.OpenPrice)</span>
+                                                            </div>
+                                                            <div class="info-row">
+                                                                <span class="label">高値</span>
+                                                                <span class="value"
+                                                                      style="@(stock.HighPrice.HasValue ? "color:#e03535;" : "")">@FormatPrice(stock.HighPrice)</span>
+                                                            </div>
+                                                            <div class="info-row">
+                                                                <span class="label">安値</span>
+                                                                <span class="value"
+                                                                      style="@(stock.LowPrice.HasValue ? "color:#1565c0;" : "")">@FormatPrice(stock.LowPrice)</span>
+                                                            </div>
+                                                            <div class="info-row">
+                                                                <span class="label">前日終値</span>
+                                                                <span class="value">@FormatPrice(stock.PreviousClose)</span>
+                                                            </div>
+                                                            <div class="info-row">
+                                                                <span class="label">出来高</span>
+                                                                <span class="value">@(stock.Volume.HasValue? stock.Volume.Value.ToString("N0") : "—")</span>
+                                                            </div>
+                                                            @if (!string.IsNullOrEmpty(stock.LastUpdated))
+                                                            {
+                                                                <div style="font-size:10px;color:#bbb;margin-top:8px;text-align:right;">取得: @stock.LastUpdated</div>
+                                                            }
+                                                        </div>
+
+                                                        <div class="company-overview-card card-overview">
+                                                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                                                                <h3 style="margin:0;">企業概要</h3>
+                                                                <button class="btn-refresh-sm" @onclick="RefreshSummary" disabled="@isRefreshingSummary">
+                                                                    @(isRefreshingSummary ? "取得中…" : "🔄 更新")
+                                                                </button>
+                                                            </div>
+                                                            @if (summaryError)
+                                                            {
+                                                                <div class="error-log-panel" style="margin-bottom:10px;">
+                                                                    <div class="error-log-header">
+                                                                        <span>⚠️ 企業概要取得エラー</span>
+                                                                        <button class="error-log-clear" @onclick="() => summaryError = false">✕</button>
+                                                                    </div>
+                                                                    <div class="error-log-body">
+                                                                        <div class="error-log-line">@summaryErrorMessage</div>
+                                                                    </div>
+                                                                </div>
+                                                            }
+                                                            @if (!string.IsNullOrEmpty(stock.CompanyDescription))
+                                                            {
+                                                                <p style="font-size:13px;color:#ccc;line-height:1.7;margin:0 0 12px;">@stock.CompanyDescription</p>
+                                                            }
+                                                            else if (!isRefreshingSummary)
+                                                            {
+                                                                <p style="color:#666;font-size:13px;margin:0 0 12px;">企業概要を取得するには更新ボタンを押してください。</p>
+                                                            }
+                                                            <div class="meta-row">
+                                                                <span>従業員 <strong style="color:#ddd;">@(stock.Employees.HasValue ? $"{stock.Employees.Value:N0}人" :
+                                                                                                                                                       "—")</strong></span>
+                                                                    <span>所在地 <strong style="color:#ddd;">@FormatLocation(stock.CompanyCity,
+                                                                                                                                                                        stock.CompanyCountry)</strong></span>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="dividend-card card-dividend">
+                                                                    <div class="dividend-card-header">
+                                                                        <h3>配当推移（過去5年）</h3>
+                                                                        <div style="display:flex;align-items:center;gap:12px;">
+                                                                            <div class="cagr-badge">
+                                                                                <span class="cagr-label">CAGR（年平均成長率・当年除く）</span>
+                                                                                <span class="cagr-value">@DivCagrText <span class="cagr-unit">/年</span></span>
+                                                                            </div>
+                                                                            <button class="btn-refresh-sm" @onclick="RefreshDividends" disabled="@isRefreshingDividends">
+                                                                                @(isRefreshingDividends ? "取得中…" : "🔄 更新")
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                    @if (dividendError)
+                                                                    {
+                                                                        <div class="error-log-panel" style="margin-bottom:10px;">
+                                                                            <div class="error-log-header">
+                                                                                <span>⚠️ 配当データ取得エラー</span>
+                                                                                <button class="error-log-clear" @onclick="() => dividendError = false">✕</button>
+                                                                            </div>
+                                                                            <div class="error-log-body">
+                                                                                <div class="error-log-line">@dividendErrorMessage</div>
+                                                                            </div>
+                                                                        </div>
+                                                                    }
+                                                                    <div class="dividend-chart">
+                                                                        @{
+                                                                            var divBars = GetDivBars();
+                                                                            var divGridLines = GetDivGridLines();
+                                                                        }
+                                                                        @if (divBars.Count > 0)
+                                                                        {
+                                                                            var hasBreakdown = divBars.Any(b => b.HasBreakdown);
+                                                                            <svg viewBox="0 0 420 185" style="width:100%;height:auto;">
+                                                                                @foreach (var gl in divGridLines)
+                                                                                {
+                                                                                    <line x1="36" y1="@Sv(gl.Y)" x2="400" y2="@Sv(gl.Y)" stroke="#f0f2f5" stroke-width="1" />
+                                                                                    @SvgText(30, gl.Y + 4, "end", 9, "#bbb", gl.Label)
+                                                                                }
+                                                                                @foreach (var bar in divBars)
+                                                                                {
+                                                                                    @if (bar.HasBreakdown)
+                                                                                    {
+                                                                                        @if (bar.HInterim > 0.5)
+                                                                                        {
+                                                                                            <rect x="@bar.XInterim" y="@Sv(bar.YInterim)" width="28" height="@Sv(bar.HInterim)" fill="#64b5f6"
+                                                                                                  rx="3" />
+                                                                                            @SvgText(bar.XInterim + 14, bar.YInterim - 3, "middle", 8, "#aaa", bar.InterimAmt.ToString("N0"))
+                                                                                        }
+                                                                                        @if (bar.HFinal > 0.5)
+                                                                                        {
+                                                                                            <rect x="@bar.XFinal" y="@Sv(bar.YFinal)" width="28" height="@Sv(bar.HFinal)" fill="#1e88e5"
+                                                                                                  rx="3" />
+                                                                                            @SvgText(bar.XFinal + 14, bar.YFinal - 3, "middle", 8, "#ccc", bar.FinalAmt.ToString("N0"))
+                                                                                        }
+                                                                                    }
+                                                                                    else
+                                                                                    {
+                                                                                        <rect x="@bar.XInterim" y="@Sv(bar.YFinal)" width="60" height="@Sv(bar.HFinal)" fill="#1e88e5"
+                                                                                              rx="3" />
+                                                                                        @SvgText(bar.XInterim + 30, bar.YFinal - 3, "middle", 9, "#ccc", bar.Total.ToString("N0"), bold:
+                                                                            true)
+                                                                                    }
+                                                                                    @SvgText(bar.XCenter, 145, "middle", 10, "#888", $"{bar.Year % 100:D2}年度")
+                                                                                    @if (bar.IsCurrentYear)
+                                                                                    {
+                                                                                        @SvgText(bar.XCenter, 157, "middle", 8, "#e67e22", "(現時点)")
+                                                                                    }
+                                                                                }
+                                                                                @if (hasBreakdown)
+                                                                                {
+                                                                                    <rect x="105" y="165" width="10" height="10" fill="#64b5f6" rx="2" />
+                                                                                    @SvgText(118, 174, "start", 9, "#888", "中間配当")
+                                                                                    <rect x="195" y="165" width="10" height="10" fill="#1e88e5" rx="2" />
+                                                                                    @SvgText(208, 174, "start", 9, "#888", "期末配当")
+                                                                                }
+                                                                            </svg>
+                                                                        }
+                                                                        else if (isRefreshingDividends)
+                                                                        {
+                                                                            <div style="text-align:center;padding:30px 0;color:#888;font-size:13px;">配当データを取得中…</div>
+                                                                        }
+                                                                        else if (stock?.DividendHistory != null && stock.DividendHistory.Count == 0)
+                                                                        {
+                                                                            <div style="text-align:center;padding:30px 0;color:#888;font-size:13px;">配当データなし（無配または未対応銘柄）</div>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <div style="text-align:center;padding:30px 0;color:#666;font-size:13px;">配当データを取得するには更新ボタンを押してください。
+                                                                            </div>
+                                                                        }
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                        }
+                                                        @* end else *@
+                                                    </div>
 
 @code {
     [Parameter] public string Code { get; set; } = "";
@@ -501,7 +519,7 @@
             "1M" => DateTime.Today.AddMonths(-1),
             "3M" => DateTime.Today.AddMonths(-3),
             "6M" => DateTime.Today.AddMonths(-6),
-            _    => DateTime.MinValue,
+            _ => DateTime.MinValue,
         };
         if (cutoff == DateTime.MinValue) return data;
         return data.Where(p => DateTime.TryParse(p.Date, out var d) && d >= cutoff).ToList();
@@ -597,7 +615,7 @@
             (DivBottom - DivHeight * 0.25, (max * 0.25m).ToString("N0")),
             (DivBottom - DivHeight * 0.50, (max * 0.50m).ToString("N0")),
             (DivBottom - DivHeight * 0.75, (max * 0.75m).ToString("N0")),
-            (DivBottom - DivHeight,        max.ToString("N0")),
+            (DivBottom - DivHeight, max.ToString("N0")),
         ];
     }
 
@@ -612,7 +630,7 @@
             var filtered = data.Where(d => d.Year < currentFiscalYear).ToList();
             if (filtered.Count < 2) return "—";
             var first = (double)filtered.First().Amount;
-            var last  = (double)filtered.Last().Amount;
+            var last = (double)filtered.Last().Amount;
             if (first <= 0) return "—";
             var cagr = Math.Pow(last / first, 1.0 / (filtered.Count - 1)) - 1;
             return $"{(cagr >= 0 ? "+" : "")}{cagr * 100:F1}%";
@@ -624,7 +642,8 @@
         v.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
 
     // Razor が <text> をキーワードと解釈するため MarkupString で SVG text 要素を生成
-    private static MarkupString SvgText(double x, double y, string anchor, int size, string fill, string content, bool bold = false)
+    private static MarkupString SvgText(double x, double y, string anchor, int size, string fill, string content, bool bold
+= false)
     {
         var ic = System.Globalization.CultureInfo.InvariantCulture;
         var fw = bold ? " font-weight=\"600\"" : "";
