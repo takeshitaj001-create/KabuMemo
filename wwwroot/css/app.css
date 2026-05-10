@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
@@ -6,7 +7,8 @@ h1:focus {
     outline: none;
 }
 
-a, .btn-link {
+a,
+.btn-link {
     color: #0071c1;
 }
 
@@ -16,8 +18,12 @@ a, .btn-link {
     border-color: #1861ac;
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
 .content {
@@ -50,12 +56,12 @@ a, .btn-link {
     z-index: 1000;
 }
 
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
-    }
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
 
 .blazor-error-boundary {
     background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
@@ -63,9 +69,9 @@ a, .btn-link {
     color: white;
 }
 
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
 
 .loading-progress {
     position: absolute;
@@ -76,19 +82,19 @@ a, .btn-link {
     margin: 0 auto 0 auto;
 }
 
-    .loading-progress circle {
-        fill: none;
-        stroke: #e0e0e0;
-        stroke-width: 0.6rem;
-        transform-origin: 50% 50%;
-        transform: rotate(-90deg);
-    }
+.loading-progress circle {
+    fill: none;
+    stroke: #e0e0e0;
+    stroke-width: 0.6rem;
+    transform-origin: 50% 50%;
+    transform: rotate(-90deg);
+}
 
-        .loading-progress circle:last-child {
-            stroke: #1b6ec2;
-            stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
-            transition: stroke-dasharray 0.05s ease-in-out;
-        }
+.loading-progress circle:last-child {
+    stroke: #1b6ec2;
+    stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+    transition: stroke-dasharray 0.05s ease-in-out;
+}
 
 .loading-progress-text {
     position: absolute;
@@ -97,26 +103,30 @@ a, .btn-link {
     inset: calc(20vh + 3.25rem) 0 auto 0.2rem;
 }
 
-    .loading-progress-text:after {
-        content: var(--blazor-load-percentage-text, "Loading");
-    }
+.loading-progress-text:after {
+    content: var(--blazor-load-percentage-text, "Loading");
+}
 
 code {
     color: #c02d76;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+.form-floating>.form-control-plaintext::placeholder,
+.form-floating>.form-control::placeholder {
     color: var(--bs-secondary-color);
     text-align: end;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+.form-floating>.form-control-plaintext:focus::placeholder,
+.form-floating>.form-control:focus::placeholder {
     text-align: start;
 }
 
 /* ===== KabuMemo カスタムスタイル ===== */
 
-* { box-sizing: border-box; }
+* {
+    box-sizing: border-box;
+}
 
 body {
     background: #f0f2f5;
@@ -137,12 +147,14 @@ body {
     justify-content: space-between;
     padding: 0 16px;
 }
+
 .app-header h1 {
     margin: 0;
     font-size: 20px;
     font-weight: 700;
     color: #fff;
 }
+
 .last-updated {
     font-size: 12px;
     color: #aab;
@@ -174,7 +186,10 @@ body {
     cursor: pointer;
     transition: background 0.15s;
 }
-.btn-add:hover { background: #0055aa; }
+
+.btn-add:hover {
+    background: #0055aa;
+}
 
 /* 凡例 */
 .legend {
@@ -185,7 +200,13 @@ body {
     font-size: 12px;
     color: #666;
 }
-.legend-item { display: flex; align-items: center; gap: 6px; }
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .legend-dot {
     width: 10px;
     height: 10px;
@@ -198,7 +219,7 @@ body {
 .card {
     background: #fff;
     border-radius: 10px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     border: none;
 }
@@ -214,6 +235,7 @@ table {
     border-collapse: collapse;
     font-size: 13px;
 }
+
 thead th {
     background: #f7f8fa;
     font-size: 11px;
@@ -225,29 +247,70 @@ thead th {
     border-bottom: 1px solid #e8eaed;
     white-space: nowrap;
 }
+
 tbody td {
     padding: 10px 12px;
     border-bottom: 1px solid #f0f2f5;
     vertical-align: middle;
 }
-tbody tr:last-child td { border-bottom: none; }
-tbody tr:hover { background: #fafbfc; }
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+tbody tr:hover {
+    background: #fafbfc;
+}
 
 /* ハイライト行 */
-tr.highlight-row { background: #fff3cd !important; }
-tr.highlight-row:hover { background: #ffe69c !important; }
-tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
+tr.highlight-row {
+    background: #fff3cd !important;
+}
+
+tr.highlight-row:hover {
+    background: #ffe69c !important;
+}
+
+tr.highlight-row td:first-child {
+    border-left: 4px solid #ffc107;
+}
 
 /* 銘柄セル */
-.stock-code { font-weight: 700; font-size: 13px; color: #222; }
-.stock-name { font-size: 12px; color: #888; margin-top: 2px; }
+.stock-code {
+    font-weight: 700;
+    font-size: 13px;
+    color: #222;
+}
+
+.stock-name {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+}
 
 /* 株価セル */
-.price { font-weight: 600; font-size: 15px; color: #222; }
-.change { font-size: 12px; margin-top: 2px; }
-.change.up { color: #e03535; }
-.change.down { color: #1565c0; }
-.change.flat { color: #888; }
+.price {
+    font-weight: 600;
+    font-size: 15px;
+    color: #222;
+}
+
+.change {
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.change.up {
+    color: #e03535;
+}
+
+.change.down {
+    color: #1565c0;
+}
+
+.change.flat {
+    color: #888;
+}
 
 /* メモ入力 */
 .memo-input {
@@ -263,7 +326,12 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     line-height: 1.5;
     transition: border-color 0.15s, background 0.15s;
 }
-.memo-input:focus { outline: none; border-color: #0066cc; background: #fff; }
+
+.memo-input:focus {
+    outline: none;
+    border-color: #0066cc;
+    background: #fff;
+}
 
 /* 日付入力 */
 .date-input {
@@ -276,7 +344,11 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     color: #333;
     transition: border-color 0.15s;
 }
-.date-input:focus { outline: none; border-color: #0066cc; }
+
+.date-input:focus {
+    outline: none;
+    border-color: #0066cc;
+}
 
 /* アラームバッジ */
 .date-badge {
@@ -302,7 +374,10 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     white-space: nowrap;
     transition: background 0.15s;
 }
-.btn-detail:hover { background: #e4e6ea; }
+
+.btn-detail:hover {
+    background: #e4e6ea;
+}
 
 /* 株価更新ボタン */
 .btn-refresh {
@@ -317,8 +392,15 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     white-space: nowrap;
     transition: background 0.15s;
 }
-.btn-refresh:hover:not(:disabled) { background: #dbeeff; }
-.btn-refresh:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-refresh:hover:not(:disabled) {
+    background: #dbeeff;
+}
+
+.btn-refresh:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
 
 .btn-refresh-sm {
     background: #f0f8ff;
@@ -330,8 +412,15 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     cursor: pointer;
     transition: background 0.15s;
 }
-.btn-refresh-sm:hover:not(:disabled) { background: #dbeeff; }
-.btn-refresh-sm:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-refresh-sm:hover:not(:disabled) {
+    background: #dbeeff;
+}
+
+.btn-refresh-sm:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
 
 /* 外部リンクボタン */
 .btn-ext-link {
@@ -344,10 +433,24 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     white-space: nowrap;
     line-height: 1.6;
 }
-.btn-ext-link:hover { opacity: 0.8; color: #fff; }
-.btn-ext-yahoo   { background: #ff0033; }
-.btn-ext-minkabu { background: #1565c0; }
-.btn-ext-kabutan { background: #e67e00; }
+
+.btn-ext-link:hover {
+    opacity: 0.8;
+    color: #fff;
+}
+
+.btn-ext-yahoo {
+    background: #ff0033;
+}
+
+.btn-ext-minkabu {
+    background: #1565c0;
+}
+
+.btn-ext-kabutan {
+    background: #e67e00;
+}
+
 .ext-link-col {
     display: flex;
     flex-direction: column;
@@ -361,6 +464,7 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     flex-direction: column;
     gap: 2px;
 }
+
 .btn-sort {
     background: #f0f2f5;
     border: 1px solid #ddd;
@@ -371,8 +475,15 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     line-height: 1.4;
     transition: background 0.15s;
 }
-.btn-sort:hover:not(:disabled) { background: #e4e6ea; }
-.btn-sort:disabled { opacity: 0.3; cursor: default; }
+
+.btn-sort:hover:not(:disabled) {
+    background: #e4e6ea;
+}
+
+.btn-sort:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
 
 /* 削除ボタン */
 .btn-delete {
@@ -384,7 +495,10 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     opacity: 0.5;
     transition: opacity 0.15s;
 }
-.btn-delete:hover { opacity: 1; }
+
+.btn-delete:hover {
+    opacity: 1;
+}
 
 /* 空状態 */
 .empty-state {
@@ -392,18 +506,23 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     padding: 48px 16px;
     color: #888;
 }
-.empty-state p { margin: 8px 0 16px; font-size: 14px; }
+
+.empty-state p {
+    margin: 8px 0 16px;
+    font-size: 14px;
+}
 
 /* モーダル */
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.45);
+    background: rgba(0, 0, 0, 0.45);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 2000;
 }
+
 .modal-box {
     background: #fff;
     border-radius: 12px;
@@ -411,7 +530,7 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     min-width: 320px;
     max-width: 480px;
     width: 90%;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
 }
 
 /* 戻るバー */
@@ -421,6 +540,7 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     gap: 12px;
     margin-bottom: 14px;
 }
+
 .btn-back {
     background: #fff;
     border: 1px solid #ddd;
@@ -431,7 +551,10 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     color: #333;
     transition: background 0.15s;
 }
-.btn-back:hover { background: #f0f2f5; }
+
+.btn-back:hover {
+    background: #f0f2f5;
+}
 
 /* 詳細ヘッダー */
 .detail-header {
@@ -443,17 +566,34 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     justify-content: space-between;
     margin-bottom: 16px;
 }
-.detail-price-block { text-align: right; }
+
+.detail-price-block {
+    text-align: right;
+}
+
 .detail-price {
     font-size: 28px;
     font-weight: 700;
     color: #fff;
     line-height: 1;
 }
-.detail-change { font-size: 14px; margin-top: 4px; }
-.detail-change.up { color: #ff7070; }
-.detail-change.down { color: #64b5f6; }
-.detail-change.flat { color: #aab; }
+
+.detail-change {
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.detail-change.up {
+    color: #ff7070;
+}
+
+.detail-change.down {
+    color: #64b5f6;
+}
+
+.detail-change.flat {
+    color: #aab;
+}
 
 /* 外部リンク行 */
 .link-row {
@@ -461,6 +601,7 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     gap: 10px;
     margin-bottom: 16px;
 }
+
 .ext-link-box {
     flex: 1;
     display: flex;
@@ -473,10 +614,27 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     transition: opacity 0.15s, border-color 0.15s;
     min-width: 0;
 }
-.ext-link-box:hover { opacity: 0.85; text-decoration: none; }
-.ext-link-box.yahoo  { background: #fff1f1; border-color: #ffc5c5; }
-.ext-link-box.minkabu { background: #f1fff3; border-color: #a8e6ae; }
-.ext-link-box.kabutan { background: #fff8f1; border-color: #ffd4a0; }
+
+.ext-link-box:hover {
+    opacity: 0.85;
+    text-decoration: none;
+}
+
+.ext-link-box.yahoo {
+    background: #fff1f1;
+    border-color: #ffc5c5;
+}
+
+.ext-link-box.minkabu {
+    background: #f1fff3;
+    border-color: #a8e6ae;
+}
+
+.ext-link-box.kabutan {
+    background: #fff8f1;
+    border-color: #ffd4a0;
+}
+
 .link-logo {
     font-size: 18px;
     font-weight: 700;
@@ -485,11 +643,13 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     width: 28px;
     text-align: center;
 }
+
 .link-body {
     display: flex;
     flex-direction: column;
     min-width: 0;
 }
+
 .link-label {
     font-size: 12px;
     color: #333;
@@ -498,11 +658,13 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
 .ext-badge {
     font-size: 10px;
     color: #999;
     margin-top: 2px;
 }
+
 .link-arrow {
     margin-left: auto;
     font-size: 16px;
@@ -516,14 +678,16 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     border-radius: 10px;
     padding: 16px;
     margin-bottom: 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
 }
+
 .tag-row {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
     margin-top: 10px;
 }
+
 .tag-btn {
     border: none;
     border-radius: 16px;
@@ -533,10 +697,27 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     font-weight: 600;
     transition: background 0.15s;
 }
-.tag-btn.off { background: #f0f2f5; color: #666; }
-.tag-btn.buy.on  { background: #ffebee; color: #c62828; }
-.tag-btn.hold.on { background: #e8f5e9; color: #2e7d32; }
-.tag-btn.alarm.on { background: #ffc107; color: #5a3e00; }
+
+.tag-btn.off {
+    background: #f0f2f5;
+    color: #666;
+}
+
+.tag-btn.buy.on {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.tag-btn.hold.on {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.tag-btn.alarm.on {
+    background: #ffc107;
+    color: #5a3e00;
+}
+
 .alarm-date-row {
     display: flex;
     align-items: center;
@@ -545,7 +726,10 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     font-size: 13px;
     color: #555;
 }
-.alarm-date-row .date-input { max-width: 160px; }
+
+.alarm-date-row .date-input {
+    max-width: 160px;
+}
 
 /* 詳細2カラムグリッド */
 .detail-main-layout {
@@ -557,18 +741,33 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
         "basic dividend";
     gap: 16px;
 }
-.card-basic    { grid-area: basic; }
-.card-stock    { grid-area: stock; }
-.card-overview { grid-area: overview; }
-.card-dividend { grid-area: dividend; }
+
+.card-basic {
+    grid-area: basic;
+}
+
+.card-stock {
+    grid-area: stock;
+}
+
+.card-overview {
+    grid-area: overview;
+}
+
+.card-dividend {
+    grid-area: dividend;
+}
 
 .detail-card {
     background: #fff;
     border-radius: 10px;
     padding: 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
 }
-.detail-card h3, .company-overview-card h3, .dividend-card h3 {
+
+.detail-card h3,
+.company-overview-card h3,
+.dividend-card h3 {
     margin: 0 0 12px;
     font-size: 14px;
     font-weight: 700;
@@ -576,7 +775,12 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
 }
 
 /* 情報グリッド */
-.info-grid { display: flex; flex-direction: column; gap: 0; }
+.info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
 .info-section-label {
     font-size: 11px;
     color: #aaa;
@@ -586,7 +790,13 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     padding-top: 8px;
     border-top: 1px solid #f0f2f5;
 }
-.info-section-label:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+
+.info-section-label:first-child {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 0;
+}
+
 .info-row {
     display: flex;
     justify-content: space-between;
@@ -596,10 +806,26 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     font-size: 13px;
     gap: 8px;
 }
-.info-row:last-child { border-bottom: none; }
-.info-row .label { color: #888; flex-shrink: 0; }
-.info-row .value { font-weight: 600; color: #333; text-align: right; }
-.placeholder-val { color: #bbb !important; font-weight: 400 !important; }
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row .label {
+    color: #888;
+    flex-shrink: 0;
+}
+
+.info-row .value {
+    font-weight: 600;
+    color: #333;
+    text-align: right;
+}
+
+.placeholder-val {
+    color: #bbb !important;
+    font-weight: 400 !important;
+}
 
 /* チャートプレースホルダー */
 .chart-placeholder {
@@ -621,6 +847,7 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     gap: 4px;
     margin-bottom: 8px;
 }
+
 .chart-period-btn {
     font-size: 11px;
     padding: 2px 9px;
@@ -631,12 +858,16 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
 }
+
 .chart-period-btn.active {
     background: #0066cc;
     color: #fff;
     border-color: #0066cc;
 }
-.chart-period-btn:hover:not(.active) { background: #f0f0f0; }
+
+.chart-period-btn:hover:not(.active) {
+    background: #f0f0f0;
+}
 
 /* 実データチャートエリア */
 .chart-area {
@@ -651,9 +882,16 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     background: #fff;
     border-radius: 10px;
     padding: 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
 }
-.company-overview-card p { margin: 0 0 10px; font-size: 13px; color: #444; line-height: 1.8; }
+
+.company-overview-card p {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: #444;
+    line-height: 1.8;
+}
+
 .meta-row {
     display: flex;
     flex-wrap: wrap;
@@ -667,8 +905,9 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     background: #fff;
     border-radius: 10px;
     padding: 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
 }
+
 .dividend-card-header {
     display: flex;
     align-items: flex-start;
@@ -677,6 +916,7 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     flex-wrap: wrap;
     gap: 6px;
 }
+
 .cagr-badge {
     display: flex;
     flex-direction: column;
@@ -687,10 +927,28 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     padding: 6px 10px;
     min-width: 120px;
 }
-.cagr-label { font-size: 10px; color: #888; }
-.cagr-value { font-size: 18px; font-weight: 700; color: #0066cc; line-height: 1; }
-.cagr-unit { font-size: 12px; font-weight: 400; color: #888; }
-.dividend-chart { margin-top: 4px; }
+
+.cagr-label {
+    font-size: 10px;
+    color: #888;
+}
+
+.cagr-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0066cc;
+    line-height: 1;
+}
+
+.cagr-unit {
+    font-size: 12px;
+    font-weight: 400;
+    color: #888;
+}
+
+.dividend-chart {
+    margin-top: 4px;
+}
 
 /* エラーログパネル */
 .error-log-panel {
@@ -702,6 +960,7 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     font-size: 12px;
     overflow: hidden;
 }
+
 .error-log-header {
     display: flex;
     align-items: center;
@@ -712,6 +971,7 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     font-weight: 600;
     font-size: 12px;
 }
+
 .error-log-clear {
     background: none;
     border: none;
@@ -722,12 +982,17 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     opacity: 0.7;
     transition: opacity 0.15s;
 }
-.error-log-clear:hover { opacity: 1; }
+
+.error-log-clear:hover {
+    opacity: 1;
+}
+
 .error-log-body {
     padding: 8px 12px;
     max-height: 200px;
     overflow-y: auto;
 }
+
 .error-log-line {
     color: #ffb3b3;
     line-height: 1.7;
@@ -736,15 +1001,50 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
 }
 
 /* 適時開示テーブル */
-.card-ir { grid-column: 1 / -1; }
+.card-ir {
+    grid-column: 1 / -1;
+}
 
-.ir-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.ir-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #333; color: #aab; font-weight: 600; }
-.ir-table td { padding: 6px 8px; border-bottom: 1px solid #2a2a2a; vertical-align: top; }
-.ir-date { white-space: nowrap; color: #aab; width: 90px; }
-.ir-category { white-space: nowrap; color: #7eb8f7; width: 80px; }
-.ir-title a { color: #90caf9; text-decoration: none; }
-.ir-title a:hover { text-decoration: underline; }
+.ir-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.ir-table th {
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 1px solid #333;
+    color: #aab;
+    font-weight: 600;
+}
+
+.ir-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #2a2a2a;
+    vertical-align: top;
+}
+
+.ir-date {
+    white-space: nowrap;
+    color: #aab;
+    width: 90px;
+}
+
+.ir-category {
+    white-space: nowrap;
+    color: #7eb8f7;
+    width: 80px;
+}
+
+.ir-title a {
+    color: #90caf9;
+    text-decoration: none;
+}
+
+.ir-title a:hover {
+    text-decoration: underline;
+}
 
 /* 歯車ボタン */
 .btn-gear {
@@ -758,7 +1058,11 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     line-height: 1;
     transition: background 0.15s, color 0.15s;
 }
-.btn-gear:hover { background: #f0f2f5; color: #333; }
+
+.btn-gear:hover {
+    background: #f0f2f5;
+    color: #333;
+}
 
 /* 設定モーダル内ボタン */
 .btn-settings-item {
@@ -774,7 +1078,10 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     text-align: left;
     transition: background 0.15s;
 }
-.btn-settings-item:hover { background: #eef0f4; }
+
+.btn-settings-item:hover {
+    background: #eef0f4;
+}
 
 /* CSVモーダル */
 .modal-box-wide {
@@ -782,6 +1089,7 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     max-width: 760px;
     width: 95%;
 }
+
 .csv-textarea {
     width: 100%;
     font-family: 'Consolas', 'Courier New', monospace;
@@ -794,15 +1102,51 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
     resize: vertical;
     line-height: 1.6;
 }
-.csv-textarea:focus { outline: none; border-color: #0066cc; background: #fff; }
+
+.csv-textarea:focus {
+    outline: none;
+    border-color: #0066cc;
+    background: #fff;
+}
+
+/* ローディング画像 */
+.loading-img-pc {
+    width: auto;
+    height: auto;
+}
+
+.loading-img-mobile {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .loading-img-pc {
+        display: none;
+    }
+
+    .loading-img-mobile {
+        display: block;
+    }
+}
 
 /* レスポンシブ */
 @media (max-width: 640px) {
-    .link-row { flex-direction: column; }
+    .link-row {
+        flex-direction: column;
+    }
+
     .detail-main-layout {
         grid-template-columns: 1fr;
         grid-template-areas: "basic" "stock" "overview" "dividend";
     }
-    .detail-header { flex-direction: column; align-items: flex-start; gap: 8px; }
-    .detail-price-block { text-align: left; }
+
+    .detail-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .detail-price-block {
+        text-align: left;
+    }
 }
