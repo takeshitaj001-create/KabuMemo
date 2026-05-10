@@ -1128,8 +1128,9 @@ tr.highlight-row td:first-child {
 
     .loading-img-mobile {
         display: block;
-        width: 80vw !important;
-        max-width: 320px !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        min-width: 100vw !important;
         height: auto !important;
     }
 }
