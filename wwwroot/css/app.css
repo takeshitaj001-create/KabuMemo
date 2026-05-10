@@ -1111,7 +1111,9 @@ tr.highlight-row td:first-child {
 
 /* ローディング画像 */
 .loading-img-pc {
-    width: auto;
+    width: 40vw;
+    max-width: 500px;
+    min-width: 200px;
     height: auto;
 }
 
@@ -1126,6 +1128,9 @@ tr.highlight-row td:first-child {
 
     .loading-img-mobile {
         display: block;
+        width: 80vw;
+        max-width: 320px;
+        height: auto;
     }
 }
 
