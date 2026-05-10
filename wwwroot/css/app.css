@@ -1111,6 +1111,9 @@ tr.highlight-row td:first-child {
 
 /* ローディング画像 */
 .loading-img-pc {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100vw;
     height: 100vh;
     object-fit: fill;
@@ -1127,6 +1130,9 @@ tr.highlight-row td:first-child {
 
     .loading-img-mobile {
         display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
         width: 100vw;
         height: 100vh;
         object-fit: fill;
