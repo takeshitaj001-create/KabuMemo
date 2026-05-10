@@ -746,6 +746,56 @@ tr.highlight-row td:first-child { border-left: 4px solid #ffc107; }
 .ir-title a { color: #90caf9; text-decoration: none; }
 .ir-title a:hover { text-decoration: underline; }
 
+/* 歯車ボタン */
+.btn-gear {
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 16px;
+    cursor: pointer;
+    color: #666;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+}
+.btn-gear:hover { background: #f0f2f5; color: #333; }
+
+/* 設定モーダル内ボタン */
+.btn-settings-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    background: #f7f8fa;
+    border: 1px solid #e8eaed;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+}
+.btn-settings-item:hover { background: #eef0f4; }
+
+/* CSVモーダル */
+.modal-box-wide {
+    min-width: 480px;
+    max-width: 760px;
+    width: 95%;
+}
+.csv-textarea {
+    width: 100%;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px 10px;
+    background: #fafafa;
+    color: #222;
+    resize: vertical;
+    line-height: 1.6;
+}
+.csv-textarea:focus { outline: none; border-color: #0066cc; background: #fff; }
+
 /* レスポンシブ */
 @media (max-width: 640px) {
     .link-row { flex-direction: column; }

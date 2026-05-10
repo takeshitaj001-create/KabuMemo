@@ -114,6 +114,51 @@
     </div>
 }
 
+@if (showSettingsModal)
+{
+    <div class="modal-overlay" @onclick="CloseSettingsModal">
+        <div class="modal-box" @onclick:stopPropagation>
+            <h3 style="margin:0 0 16px;font-size:18px;">⚙ 高度な操作</h3>
+            <div class="d-flex flex-column gap-2">
+                <button class="btn-settings-item" @onclick="OpenCsvModal">
+                    <span style="font-size:16px;">📋</span>
+                    <div>
+                        <div style="font-weight:600;font-size:14px;">銘柄データをCSVで編集</div>
+                        <div style="font-size:12px;color:#888;margin-top:2px;">テキスト形式で一括編集・バックアップ</div>
+                    </div>
+                </button>
+            </div>
+            <div class="d-flex justify-content-end mt-3">
+                <button class="btn btn-secondary btn-sm" @onclick="CloseSettingsModal">閉じる</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showCsvModal)
+{
+    <div class="modal-overlay" @onclick="CloseCsvModal">
+        <div class="modal-box modal-box-wide" @onclick:stopPropagation>
+            <h3 style="margin:0 0 8px;font-size:18px;">📋 銘柄データをCSVで編集</h3>
+            <p style="margin:0 0 12px;font-size:12px;color:#888;">
+                ヘッダー行はそのままにして、データ行を自由に編集・並べ替えできます。<br>
+                保存するとこの内容で銘柄一覧が上書きされます。株価などの取得済みデータは保持されます。
+            </p>
+            @if (!string.IsNullOrEmpty(csvError))
+            {
+                <div class="alert alert-danger py-1 px-2 mb-2" style="font-size:13px;">@csvError</div>
+            }
+            <textarea class="csv-textarea" rows="14"
+                      value="@csvText"
+                      @oninput="e => csvText = e.Value?.ToString() ?? string.Empty"></textarea>
+            <div class="d-flex gap-2 justify-content-end mt-3">
+                <button class="btn btn-secondary" @onclick="CloseCsvModal">キャンセル</button>
+                <button class="btn btn-primary" @onclick="SaveCsv">保存</button>
+            </div>
+        </div>
+    </div>
+}
+
 <div class="container-fluid px-3 py-3">
     <div class="toolbar">
         <h2 style="margin:0;font-size:18px;font-weight:700;">
@@ -138,6 +183,7 @@
                 @(isUpdatingPrices ? "更新中…" : "📊 株価更新")
             </button>
             <button class="btn-add" @onclick="OpenAddModal">＋ 銘柄を追加</button>
+            <button class="btn-gear" title="高度な操作" @onclick="OpenSettingsModal">⚙</button>
         </div>
     </div>
 
@@ -287,6 +333,11 @@
     private int updatedCount = 0;
     private string lastPriceUpdateTime = "";
     private List<string> errorLog = [];
+
+    private bool showSettingsModal = false;
+    private bool showCsvModal = false;
+    private string csvText = "";
+    private string? csvError = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -495,4 +546,150 @@
     private void NavToDetail(string code) => Nav.NavigateTo("stock/" + code);
 
     private async Task SaveAsync() => await StockSvc.SaveAsync(stocks);
+
+    // ---- 高度な操作（設定・CSV編集）----
+
+    private void OpenSettingsModal() => showSettingsModal = true;
+    private void CloseSettingsModal() => showSettingsModal = false;
+
+    private void OpenCsvModal()
+    {
+        showSettingsModal = false;
+        csvText = ExportToCsv(stocks);
+        csvError = null;
+        showCsvModal = true;
+    }
+
+    private void CloseCsvModal() => showCsvModal = false;
+
+    private async Task SaveCsv()
+    {
+        var (result, error) = ImportFromCsv(csvText, stocks);
+        if (error != null)
+        {
+            csvError = error;
+            return;
+        }
+        stocks = result!;
+        await StockSvc.SaveAsync(stocks);
+        showCsvModal = false;
+    }
+
+    private static string ExportToCsv(List<StockItem> stocks)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("銘柄コード,銘柄名,メモ,アラーム日付,購入検討,保有中");
+        foreach (var s in stocks)
+        {
+            sb.Append(CsvEscape(s.Code));
+            sb.Append(',');
+            sb.Append(CsvEscape(s.Name));
+            sb.Append(',');
+            sb.Append(CsvEscape(s.Memo));
+            sb.Append(',');
+            sb.Append(CsvEscape(s.AlarmDate ?? ""));
+            sb.Append(',');
+            sb.Append(s.IsBuyCandidate ? "true" : "false");
+            sb.Append(',');
+            sb.AppendLine(s.IsHolding ? "true" : "false");
+        }
+        return sb.ToString().TrimEnd('\r', '\n');
+    }
+
+    private static string CsvEscape(string value)
+    {
+        if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
+            return '"' + value.Replace("\"", "\"\"") + '"';
+        return value;
+    }
+
+    private static (List<StockItem>? result, string? error) ImportFromCsv(string csv, List<StockItem> existing)
+    {
+        var rows = ParseCsvRows(csv.Trim());
+        if (rows.Count == 0) return ([], null);
+
+        var expectedHeader = new[] { "銘柄コード", "銘柄名", "メモ", "アラーム日付", "購入検討", "保有中" };
+        var header = rows[0];
+        if (header.Count < 6 || !header.Take(6).SequenceEqual(expectedHeader))
+            return (null, "ヘッダー行が正しくありません。「銘柄コード,銘柄名,メモ,アラーム日付,購入検討,保有中」で始まる必要があります。");
+
+        var existingMap = existing.ToDictionary(s => s.Code, s => s);
+        var result = new List<StockItem>();
+        var usedCodes = new HashSet<string>();
+
+        for (int i = 1; i < rows.Count; i++)
+        {
+            var row = rows[i];
+            if (row.Count == 1 && string.IsNullOrWhiteSpace(row[0])) continue;
+            if (row.Count < 2) return (null, $"{i + 1}行目: 列数が不足しています（{row.Count}列）。");
+
+            var code = row[0].Trim();
+            if (string.IsNullOrEmpty(code)) return (null, $"{i + 1}行目: 銘柄コードが空です。");
+            if (usedCodes.Contains(code)) return (null, $"銘柄コード「{code}」が重複しています。");
+            usedCodes.Add(code);
+
+            var item = existingMap.TryGetValue(code, out var ex) ? ex : new StockItem { Code = code };
+            item.Code = code;
+            item.Name = row.Count > 1 ? row[1] : item.Name;
+            item.Memo = row.Count > 2 ? row[2] : "";
+            item.AlarmDate = row.Count > 3 && !string.IsNullOrWhiteSpace(row[3]) ? row[3].Trim() : null;
+            item.IsBuyCandidate = row.Count > 4 && row[4].Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
+            item.IsHolding = row.Count > 5 && row[5].Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
+            result.Add(item);
+        }
+
+        return (result, null);
+    }
+
+    private static List<List<string>> ParseCsvRows(string csv)
+    {
+        var rows = new List<List<string>>();
+        var row = new List<string>();
+        var field = new System.Text.StringBuilder();
+        bool inQuotes = false;
+        int i = 0;
+        var chars = csv.ToCharArray();
+
+        while (i < chars.Length)
+        {
+            char c = chars[i];
+            if (inQuotes)
+            {
+                if (c == '"')
+                {
+                    if (i + 1 < chars.Length && chars[i + 1] == '"')
+                    {
+                        field.Append('"');
+                        i += 2;
+                    }
+                    else { inQuotes = false; i++; }
+                }
+                else { field.Append(c); i++; }
+            }
+            else
+            {
+                if (c == '"') { inQuotes = true; i++; }
+                else if (c == ',') { row.Add(field.ToString()); field.Clear(); i++; }
+                else if (c == '\r' && i + 1 < chars.Length && chars[i + 1] == '\n')
+                {
+                    row.Add(field.ToString()); field.Clear();
+                    rows.Add(row); row = []; i += 2;
+                }
+                else if (c == '\n')
+                {
+                    row.Add(field.ToString()); field.Clear();
+                    rows.Add(row); row = []; i++;
+                }
+                else { field.Append(c); i++; }
+            }
+        }
+
+        if (field.Length > 0 || row.Count > 0)
+        {
+            row.Add(field.ToString());
+            rows.Add(row);
+        }
+
+        return rows;
+    }
 }
