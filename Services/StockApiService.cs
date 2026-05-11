@@ -189,73 +189,8 @@ public class StockApiService(HttpClient http)
         }
     }
 
-    // ---- 適時開示データ取得（irbank.net via Cloudflare Worker） ----
-
-    public async Task<IrFetchResult> FetchTdnetAsync(string code)
-    {
-        try
-        {
-            var html = await http.GetStringAsync(
-                $"{ProxyBaseUrl}/api/tdnet/{Uri.EscapeDataString(code)}");
-            return IrFetchResult.Ok(ParseTdnet(html));
-        }
-        catch (HttpRequestException ex)
-        {
-            var status = ex.StatusCode.HasValue ? $" (HTTP {(int)ex.StatusCode})" : "";
-            return IrFetchResult.Fail($"HTTP エラー{status}: {ex.Message}");
-        }
-        catch (TaskCanceledException)
-        {
-            return IrFetchResult.Fail("タイムアウト（irbank.net）");
-        }
-        catch (Exception ex)
-        {
-            return IrFetchResult.Fail($"{ex.GetType().Name}: {ex.Message}");
-        }
-    }
-
-    private static List<IrInfo> ParseTdnet(string html)
-    {
-        var results = new List<IrInfo>();
-        var tbodyMatch = Regex.Match(html, @"<tbody[^>]*>(.*?)</tbody>", RegexOptions.Singleline);
-        var body = tbodyMatch.Success ? tbodyMatch.Groups[1].Value : html;
-
-        foreach (Match tr in Regex.Matches(body, @"<tr[^>]*>(.*?)</tr>", RegexOptions.Singleline))
-        {
-            var tds = Regex.Matches(tr.Groups[1].Value, @"<td[^>]*>(.*?)</td>", RegexOptions.Singleline);
-            if (tds.Count < 3) continue;
-
-            var date = StripHtml(tds[0].Groups[1].Value);
-            var category = StripHtml(tds[1].Groups[1].Value);
-
-            var linkMatch = Regex.Match(tds[2].Groups[1].Value,
-                @"<a[^>]+href=""([^""]+)""[^>]*>(.*?)</a>", RegexOptions.Singleline);
-            if (!linkMatch.Success) continue;
-
-            var title = WebUtility.HtmlDecode(StripHtml(linkMatch.Groups[2].Value));
-            var href = linkMatch.Groups[1].Value;
-            var irUrl = href.StartsWith("http") ? href : "https://irbank.net" + href;
-
-            if (Regex.IsMatch(date, @"\d{4}") && title.Length > 0)
-                results.Add(new IrInfo { Date = date, Category = category, Title = title, Url = irUrl });
-        }
-        return results;
-    }
-
     private static string StripHtml(string html) =>
         Regex.Replace(html, @"<[^>]+>", "").Trim();
-}
-
-// ---- 適時開示取得結果ラッパー ----
-
-public class IrFetchResult
-{
-    public List<IrInfo>? Items { get; private set; }
-    public string? Error { get; private set; }
-    public bool Success => Items != null;
-
-    public static IrFetchResult Ok(List<IrInfo> items) => new() { Items = items };
-    public static IrFetchResult Fail(string msg) => new() { Error = msg };
 }
 
 // ---- 株価取得結果ラッパー ----
