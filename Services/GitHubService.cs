@@ -10,7 +10,7 @@ public record GitHubFileInfo(string Name, string Sha, string DownloadUrl, string
 public class GitHubService(IJSRuntime js)
 {
     private const string SettingsKey = "kabumemo_github_pat";
-    private const string DefaultPat = "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";
+    private const string DefaultPat = "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";
     public const string Owner = "takeshitaj001-create";
     public const string Repo = "KabuMemo-shared";
     public const string Folder = "shared-md";
