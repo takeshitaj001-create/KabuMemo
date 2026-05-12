@@ -818,6 +818,11 @@
     private async Task OnMdFileSelected(InputFileChangeEventArgs e)
     {
         if (stock == null) return;
+        if (!string.IsNullOrEmpty(stock.MdContent))
+        {
+            var confirmed = await JS.InvokeAsync<bool>("confirm", "MDメモがすでに設定されています。上書きしますか？");
+            if (!confirmed) return;
+        }
         var file = e.File;
         using var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024);
         using var reader = new StreamReader(stream);
@@ -884,6 +889,11 @@
     private async Task ImportSharedFileAsync(GitHubFileInfo file)
     {
         if (stock == null) return;
+        if (!string.IsNullOrEmpty(stock.MdContent))
+        {
+            var confirmed = await JS.InvokeAsync<bool>("confirm", $"MDメモがすでに設定されています。「{file.Name}」で上書きしますか？");
+            if (!confirmed) return;
+        }
         isImporting = true;
         importingFile = file.Name;
         StateHasChanged();
