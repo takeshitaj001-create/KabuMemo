@@ -47,6 +47,9 @@ public class StockItem
 
     // 株価チャート（日次終値、1年分）
     public List<ChartPoint>? ChartData { get; set; }
+
+    // MDメモ（Markdownテキスト）
+    public string? MdContent { get; set; }
 }
 
 public class DividendEntry

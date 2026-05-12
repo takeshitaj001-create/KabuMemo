@@ -352,6 +352,28 @@
                                                                 </div>
                                                             </div>
 
+                                                        <div class="detail-card card-md-memo">
+                                                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                                                                <h3 style="margin:0;">MDメモ</h3>
+                                                                <div style="display:flex;gap:8px;align-items:center;">
+                                                                    <InputFile id="md-file-input" OnChange="OnMdFileSelected" accept=".md,.txt" style="display:none;" />
+                                                                    <label for="md-file-input" class="btn-refresh-sm" style="cursor:pointer;">📄 インポート</label>
+                                                                    @if (!string.IsNullOrEmpty(stock.MdContent))
+                                                                    {
+                                                                        <button class="btn-refresh-sm" style="color:#e57373;" @onclick="ClearMdContent">✕ クリア</button>
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                            @if (!string.IsNullOrEmpty(stock.MdContent))
+                                                            {
+                                                                <div class="md-content">@((MarkupString)RenderMarkdown(stock.MdContent))</div>
+                                                            }
+                                                            else
+                                                            {
+                                                                <div style="text-align:center;padding:30px 0;color:#666;font-size:13px;">MDファイルを取り込むとここに表示されます。</div>
+                                                            }
+                                                        </div>
+
                                                         }
                                                         @* end else *@
                                                     </div>
@@ -697,6 +719,32 @@
     }
 
     private void GoBack() => Nav.NavigateTo("");
+
+    private async Task OnMdFileSelected(InputFileChangeEventArgs e)
+    {
+        if (stock == null) return;
+        var file = e.File;
+        using var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024);
+        using var reader = new StreamReader(stream);
+        stock.MdContent = await reader.ReadToEndAsync();
+        await SaveAsync();
+    }
+
+    private async Task ClearMdContent()
+    {
+        if (stock == null) return;
+        stock.MdContent = null;
+        await SaveAsync();
+    }
+
+    private static string RenderMarkdown(string markdown)
+    {
+        var pipeline = new Markdig.MarkdownPipelineBuilder()
+            .UseAdvancedExtensions()
+            .DisableHtml()
+            .Build();
+        return Markdig.Markdown.ToHtml(markdown, pipeline);
+    }
 
     private async Task SaveAsync()
     {
