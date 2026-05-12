@@ -2,6 +2,7 @@
 @inject StockService StockSvc
 @inject StockApiService ApiSvc
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <PageTitle>@Code - KabuMemo</PageTitle>
 
@@ -733,6 +734,8 @@
     private async Task ClearMdContent()
     {
         if (stock == null) return;
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "MDメモをクリアしますか？");
+        if (!confirmed) return;
         stock.MdContent = null;
         await SaveAsync();
     }
