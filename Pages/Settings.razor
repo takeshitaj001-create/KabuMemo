@@ -1,0 +1,143 @@
+@page "/settings"
+@inject GitHubService GhSvc
+@inject NavigationManager Nav
+
+<PageTitle>設定 - KabuMemo</PageTitle>
+
+<div class="container-fluid px-3 py-3">
+    <div class="back-bar">
+        <button class="btn-back" @onclick="GoHome">← 一覧に戻る</button>
+        <span style="font-size:13px;color:#888;">設定</span>
+    </div>
+
+    <div class="detail-card card-md-memo" style="margin-top:16px;">
+        <h3 style="margin:0 0 16px;font-size:15px;">GitHub 共有設定</h3>
+        <p style="font-size:12px;color:#aaa;margin:0 0 16px;">
+            MDファイルの共有に使用するGitHubリポジトリの設定です。<br />
+            PATはContents（Read and write）権限が必要です。
+        </p>
+
+        <div class="settings-field">
+            <label class="settings-label">Personal Access Token (PAT)</label>
+            <input type="password" class="settings-input" @bind="pat"
+                   placeholder="github_pat_..." autocomplete="off" />
+            @if (isPatStored)
+            {
+                <div class="pat-status ok">✓ カスタムPATが保存済み</div>
+            }
+            else
+            {
+                <div class="pat-status warn">⚠ 初期値を使用中（未保存）</div>
+            }
+        </div>
+
+        <div class="settings-field">
+            <label class="settings-label">🔒 オーナー（変更不可）</label>
+            <div class="settings-fixed">@GitHubService.Owner</div>
+        </div>
+        <div class="settings-field">
+            <label class="settings-label">🔒 リポジトリ名（変更不可）</label>
+            <div class="settings-fixed">@GitHubService.Repo</div>
+        </div>
+        <div class="settings-field">
+            <label class="settings-label">🔒 共有フォルダ名（変更不可）</label>
+            <div class="settings-fixed">@GitHubService.Folder</div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:20px;flex-wrap:wrap;">
+            <button class="btn-action-primary" @onclick="SaveAsync" disabled="@isBusy">
+                @(isBusy && busyLabel == "save" ? "保存中…" : "保存")
+            </button>
+            <button class="btn-refresh-sm" @onclick="TestAsync" disabled="@isBusy">
+                @(isBusy && busyLabel == "test" ? "確認中…" : "接続テスト")
+            </button>
+            @if (isPatStored)
+            {
+                <button class="btn-refresh-sm" style="color:#e57373;" @onclick="DeleteAsync" disabled="@isBusy">
+                    🗑 PAT削除
+                </button>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="settings-message @(isError ? "error" : "ok")" style="margin-top:12px;">
+                @message
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private string pat = "";
+    private bool isBusy = false;
+    private string busyLabel = "";
+    private string message = "";
+    private bool isError = false;
+    private bool isPatStored = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        pat = await GhSvc.GetPatAsync() ?? "";
+        isPatStored = await IsPatStoredAsync();
+    }
+
+    private async Task<bool> IsPatStoredAsync()
+    {
+        var stored = await GhSvc.GetStoredPatAsync();
+        return !string.IsNullOrEmpty(stored);
+    }
+
+    private void GoHome() => Nav.NavigateTo("");
+
+    private async Task SaveAsync()
+    {
+        isBusy = true;
+        busyLabel = "save";
+        message = "";
+        StateHasChanged();
+
+        await GhSvc.SavePatAsync(pat);
+        isPatStored = true;
+        message = "設定を保存しました。";
+        isError = false;
+        isBusy = false;
+    }
+
+    private async Task DeleteAsync()
+    {
+        isBusy = true;
+        busyLabel = "delete";
+        message = "";
+        StateHasChanged();
+
+        await GhSvc.DeletePatAsync();
+        pat = await GhSvc.GetPatAsync() ?? "";
+        isPatStored = false;
+        message = "PATを削除しました。初期値を使用します。";
+        isError = false;
+        isBusy = false;
+    }
+
+    private async Task TestAsync()
+    {
+        isBusy = true;
+        busyLabel = "test";
+        message = "";
+        StateHasChanged();
+
+        var (files, error) = await GhSvc.ListFilesWithPatAsync(pat);
+        if (error != null)
+        {
+            message = $"接続失敗: {error}";
+            isError = true;
+        }
+        else
+        {
+            message = $"接続OK。共有ファイル数: {files.Count}件";
+            isError = false;
+        }
+
+        isBusy = false;
+    }
+}

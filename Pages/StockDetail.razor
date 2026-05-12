@@ -3,6 +3,7 @@
 @inject StockApiService ApiSvc
 @inject NavigationManager Nav
 @inject IJSRuntime JS
+@inject GitHubService GhSvc
 
 <PageTitle>@Code - KabuMemo</PageTitle>
 
@@ -353,27 +354,105 @@
                                                                 </div>
                                                             </div>
 
-                                                        <div class="detail-card card-md-memo">
-                                                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                                                                <h3 style="margin:0;">MDメモ</h3>
-                                                                <div style="display:flex;gap:8px;align-items:center;">
-                                                                    <InputFile id="md-file-input" OnChange="OnMdFileSelected" accept=".md,.txt" style="display:none;" />
-                                                                    <label for="md-file-input" class="btn-refresh-sm" style="cursor:pointer;">📄 インポート</label>
-                                                                    @if (!string.IsNullOrEmpty(stock.MdContent))
-                                                                    {
-                                                                        <button class="btn-refresh-sm" style="color:#e57373;" @onclick="ClearMdContent">✕ クリア</button>
-                                                                    }
-                                                                </div>
-                                                            </div>
-                                                            @if (!string.IsNullOrEmpty(stock.MdContent))
-                                                            {
-                                                                <div class="md-content">@((MarkupString)RenderMarkdown(stock.MdContent))</div>
-                                                            }
-                                                            else
-                                                            {
-                                                                <div style="text-align:center;padding:30px 0;color:#666;font-size:13px;">MDファイルを取り込むとここに表示されます。</div>
-                                                            }
-                                                        </div>
+                                                        @* 共有MD選択モーダル *@
+        @if (showSharedMdModal)
+        {
+            <div class="modal-overlay" @onclick="CloseSharedModal">
+                <div class="modal-box" style="max-width:480px;width:92%;" @onclick:stopPropagation>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <h3 style="margin:0;font-size:16px;">共有MDファイル</h3>
+                        <button class="btn-refresh-sm" @onclick="CloseSharedModal" style="padding:2px 10px;">✕</button>
+                    </div>
+
+                    @* アップロードセクション *@
+                    <div style="border:1px solid #333;border-radius:8px;padding:12px;margin-bottom:14px;">
+                        <p style="font-size:12px;color:#aaa;margin:0 0 10px;">ローカルのMDファイルをGitHubにアップロード</p>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <InputFile id="gh-upload-input" OnChange="OnGhUploadFileSelected" accept=".md" style="display:none;" />
+                            <label for="gh-upload-input" class="btn-refresh-sm" style="cursor:pointer;">📂 ファイル選択</label>
+                            @if (!string.IsNullOrEmpty(uploadFileName))
+                            {
+                                <span style="font-size:12px;color:#ccc;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@uploadFileName</span>
+                            }
+                        </div>
+                        @if (!string.IsNullOrEmpty(uploadFileName))
+                        {
+                            <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+                                <input class="settings-input" style="flex:1;font-size:12px;padding:4px 8px;"
+                                       @bind="uploadSaveName" placeholder="保存ファイル名（.md）" />
+                                <button class="btn-action-primary" style="font-size:12px;padding:4px 12px;"
+                                        @onclick="UploadToGitHubAsync" disabled="@isUploading">
+                                    @(isUploading ? "uploading…" : "📤 アップロード")
+                                </button>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(uploadMessage))
+                        {
+                            <div style="font-size:12px;margin-top:6px;color:@(uploadError ? "#e57373" : "#81c784");">@uploadMessage</div>
+                        }
+                    </div>
+
+                    @* ファイル一覧セクション *@
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                        <span style="font-size:13px;color:#ccc;">アップロード済みファイル</span>
+                        <button class="btn-refresh-sm" @onclick="LoadSharedFilesAsync" disabled="@isLoadingFiles" style="font-size:11px;">
+                            @(isLoadingFiles ? "取得中…" : "🔄 更新")
+                        </button>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(sharedFilesError))
+                    {
+                        <div style="font-size:12px;color:#e57373;margin-bottom:8px;">@sharedFilesError</div>
+                    }
+
+                    @if (sharedFiles.Count == 0 && !isLoadingFiles)
+                    {
+                        <div style="text-align:center;padding:20px 0;color:#666;font-size:13px;">
+                            @(string.IsNullOrEmpty(sharedFilesError) ? "ファイルがありません" : "")
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="max-height:240px;overflow-y:auto;">
+                            @foreach (var file in sharedFiles)
+                            {
+                                var f = file;
+                                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 4px;border-bottom:1px solid #2a2a2a;">
+                                    <span style="font-size:13px;color:#ddd;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@f.Name</span>
+                                    <button class="btn-action-primary" style="font-size:11px;padding:3px 10px;margin-left:8px;"
+                                            @onclick="() => ImportSharedFileAsync(f)" disabled="@isImporting">
+                                        @(isImporting && importingFile == f.Name ? "取込中…" : "取込")
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="detail-card card-md-memo">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <h3 style="margin:0;">MDメモ</h3>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <InputFile id="md-file-input" OnChange="OnMdFileSelected" accept=".md,.txt" style="display:none;" />
+                    <label for="md-file-input" class="btn-refresh-sm" style="cursor:pointer;">📄 ローカル取込</label>
+                    <button class="btn-refresh-sm" @onclick="OpenSharedModalAsync">☁ 共有から選択</button>
+                    @if (!string.IsNullOrEmpty(stock.MdContent))
+                    {
+                        <button class="btn-refresh-sm" style="color:#e57373;" @onclick="ClearMdContent">✕ クリア</button>
+                    }
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(stock.MdContent))
+            {
+                <div class="md-content">@((MarkupString)RenderMarkdown(stock.MdContent))</div>
+            }
+            else
+            {
+                <div style="text-align:center;padding:30px 0;color:#666;font-size:13px;">MDファイルを取り込むとここに表示されます。</div>
+            }
+        </div>
 
                                                         }
                                                         @* end else *@
@@ -395,6 +474,21 @@
     private string dividendErrorMessage = "";
     private bool isRefreshingChart = false;
     private string chartPeriod = "3M";
+
+    // 共有MDモーダル
+    private bool showSharedMdModal = false;
+    private List<GitHubFileInfo> sharedFiles = [];
+    private string sharedFilesError = "";
+    private bool isLoadingFiles = false;
+    private bool isImporting = false;
+    private string importingFile = "";
+    // アップロード
+    private string uploadFileName = "";
+    private string uploadContent = "";
+    private string uploadSaveName = "";
+    private bool isUploading = false;
+    private string uploadMessage = "";
+    private bool uploadError = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -755,5 +849,118 @@
         var idx = allStocks.FindIndex(s => s.Code == Code);
         if (idx >= 0) allStocks[idx] = stock;
         await StockSvc.SaveAsync(allStocks);
+    }
+
+    // ---- 共有MDモーダル ----
+
+    private async Task OpenSharedModalAsync()
+    {
+        showSharedMdModal = true;
+        await LoadSharedFilesAsync();
+    }
+
+    private void CloseSharedModal()
+    {
+        showSharedMdModal = false;
+        uploadFileName = "";
+        uploadContent = "";
+        uploadSaveName = "";
+        uploadMessage = "";
+    }
+
+    private async Task LoadSharedFilesAsync()
+    {
+        isLoadingFiles = true;
+        sharedFilesError = "";
+        StateHasChanged();
+
+        var (files, error) = await GhSvc.ListFilesAsync();
+        sharedFiles = files;
+        sharedFilesError = error ?? "";
+        isLoadingFiles = false;
+        StateHasChanged();
+    }
+
+    private async Task ImportSharedFileAsync(GitHubFileInfo file)
+    {
+        if (stock == null) return;
+        isImporting = true;
+        importingFile = file.Name;
+        StateHasChanged();
+
+        var (content, error) = await GhSvc.DownloadFileAsync(file.Path);
+        if (error != null)
+        {
+            sharedFilesError = $"取込失敗: {error}";
+        }
+        else
+        {
+            stock.MdContent = content;
+            await SaveAsync();
+            showSharedMdModal = false;
+        }
+
+        isImporting = false;
+        importingFile = "";
+        StateHasChanged();
+    }
+
+    private async Task OnGhUploadFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        uploadMessage = "";
+        uploadError = false;
+        uploadContent = "";
+        uploadFileName = "";
+        uploadSaveName = "";
+
+        if (!file.Name.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+        {
+            uploadMessage = "ファイル形式が正しくありません。.md ファイルを選択してください。";
+            uploadError = true;
+            return;
+        }
+
+        const long maxSize = 100 * 1024;
+        if (file.Size > maxSize)
+        {
+            uploadMessage = $"ファイルサイズが上限を超えています（{file.Size / 1024}KB / 上限100KB）。";
+            uploadError = true;
+            return;
+        }
+
+        using var stream = file.OpenReadStream(maxAllowedSize: maxSize);
+        using var reader = new StreamReader(stream);
+        uploadContent = await reader.ReadToEndAsync();
+        uploadFileName = file.Name;
+        uploadSaveName = file.Name;
+    }
+
+    private async Task UploadToGitHubAsync()
+    {
+        if (string.IsNullOrWhiteSpace(uploadContent)) return;
+        var name = uploadSaveName.Trim();
+        if (!name.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+            name += ".md";
+
+        isUploading = true;
+        uploadMessage = "";
+        StateHasChanged();
+
+        var error = await GhSvc.UploadFileAsync(name, uploadContent);
+        if (error != null)
+        {
+            uploadMessage = error;
+            uploadError = true;
+        }
+        else
+        {
+            uploadMessage = $"「{name}」をアップロードしました。";
+            uploadError = false;
+            await LoadSharedFilesAsync();
+        }
+
+        isUploading = false;
+        StateHasChanged();
     }
 }
