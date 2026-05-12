@@ -10,7 +10,6 @@ public record GitHubFileInfo(string Name, string Sha, string DownloadUrl, string
 public class GitHubService(IJSRuntime js)
 {
     private const string SettingsKey = "kabumemo_github_pat";
-    private const string DefaultPat = "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";
     public const string Owner = "takeshitaj001-create";
     public const string Repo = "KabuMemo-shared";
     public const string Folder = "shared-md";
@@ -19,13 +18,6 @@ public class GitHubService(IJSRuntime js)
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
     public async Task<string?> GetPatAsync()
-    {
-        var stored = await js.InvokeAsync<string?>("localStorage.getItem", SettingsKey);
-        if (!string.IsNullOrEmpty(stored)) return stored;
-        return DefaultPat;
-    }
-
-    public async Task<string?> GetStoredPatAsync()
     {
         return await js.InvokeAsync<string?>("localStorage.getItem", SettingsKey);
     }

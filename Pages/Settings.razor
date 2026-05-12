@@ -27,7 +27,7 @@
             }
             else
             {
-                <div class="pat-status warn">⚠ 初期値を使用中（未保存）</div>
+                <div class="pat-status warn">⚠ PATが未設定です</div>
             }
         </div>
 
@@ -84,7 +84,7 @@
 
     private async Task<bool> IsPatStoredAsync()
     {
-        var stored = await GhSvc.GetStoredPatAsync();
+        var stored = await GhSvc.GetPatAsync();
         return !string.IsNullOrEmpty(stored);
     }
 
@@ -114,7 +114,7 @@
         await GhSvc.DeletePatAsync();
         pat = await GhSvc.GetPatAsync() ?? "";
         isPatStored = false;
-        message = "PATを削除しました。初期値を使用します。";
+        message = "PATを削除しました。";
         isError = false;
         isBusy = false;
     }
