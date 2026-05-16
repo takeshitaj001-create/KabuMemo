@@ -28,6 +28,12 @@
     <span class="dismiss">🗙</span>
   </div>
   <script>
+    window.decodeShiftJis = function (bytes) {
+      const decoder = new TextDecoder('shift-jis');
+      return decoder.decode(new Uint8Array(bytes));
+    };
+  </script>
+  <script>
     // 404.html からリダイレクトされた場合に元の URL を復元する
     // 例: /KabuMemo/?p=stock/7203 → /KabuMemo/stock/7203
     (function () {

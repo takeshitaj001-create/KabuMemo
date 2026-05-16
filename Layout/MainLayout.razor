@@ -2,6 +2,7 @@
 @inject NavigationManager Nav
 @inject StockService StockSvc
 @inject GitHubService GhSvc
+@inject IJSRuntime JS
 
 @* 高度な操作モーダル *@
 @if (showSettingsModal)
@@ -15,6 +16,13 @@
                     <div>
                         <div style="font-weight:600;font-size:14px;">銘柄データをCSVで編集</div>
                         <div style="font-size:12px;color:#888;margin-top:2px;">テキスト形式で一括編集・バックアップ</div>
+                    </div>
+                </button>
+                <button class="btn-settings-item" @onclick="OpenImportModal">
+                    <span style="font-size:16px;">📂</span>
+                    <div>
+                        <div style="font-weight:600;font-size:14px;">ファイルからデータ登録</div>
+                        <div style="font-size:12px;color:#888;margin-top:2px;">証券会社CSVから未登録銘柄を一括追加</div>
                     </div>
                 </button>
                 <button class="btn-settings-item" @onclick="GoSettings">
@@ -57,6 +65,103 @@
     </div>
 }
 
+@* ファイルからデータ登録モーダル *@
+@if (showImportModal)
+{
+    <div class="modal-overlay" @onclick="CloseImportModal">
+        <div class="modal-box modal-box-wide" @onclick:stopPropagation>
+            <h3 style="margin:0 0 8px;font-size:18px;">📂 ファイルからデータ登録</h3>
+            <p style="margin:0 0 16px;font-size:12px;color:#888;">
+                証券会社の保有銘柄CSVを読み込み、未登録の銘柄を一括追加します。
+            </p>
+
+            <div style="margin-bottom:12px;">
+                <label style="font-size:12px;color:#aaa;display:block;margin-bottom:6px;">データパターン</label>
+                <select @bind="importPattern"
+                        style="background:#1e1e1e;color:#eee;border:1px solid #444;border-radius:6px;padding:6px 10px;font-size:13px;width:100%;cursor:pointer;">
+                    <option value="sbi">SBI証券</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <label style="font-size:12px;color:#aaa;display:block;margin-bottom:6px;">CSVファイルを選択</label>
+                <InputFile id="import-csv-input" OnChange="OnImportCsvSelected" accept=".csv" style="display:none;" />
+                <label for="import-csv-input" class="btn-refresh-sm" style="cursor:pointer;">📂 ファイルを選択</label>
+            </div>
+
+            @if (!string.IsNullOrEmpty(importError))
+            {
+                <div style="color:#e57373;font-size:12px;margin-bottom:8px;">@importError</div>
+            }
+
+            @if (importPreview.Count > 0)
+            {
+                var newCount = importPreview.Count(p => p.IsNew);
+                var checkedCount = importPreview.Count(p => p.IsNew && p.IsChecked);
+                var allChecked = newCount > 0 && checkedCount == newCount;
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                    <span style="font-size:12px;color:#aaa;">
+                        プレビュー（全 @importPreview.Count 件 / 新規 @newCount 件）
+                    </span>
+                    @if (newCount > 0)
+                    {
+                        <button class="btn-refresh-sm" style="font-size:11px;padding:2px 8px;"
+                                @onclick="ToggleAllImportChecked">
+                            @(allChecked ? "全解除" : "全選択")
+                        </button>
+                    }
+                </div>
+                <div style="max-height:220px;overflow-y:auto;border:1px solid #333;border-radius:6px;margin-bottom:12px;">
+                    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                        @foreach (var item in importPreview)
+                        {
+                            <tr @onclick="() => { if (item.IsNew) item.IsChecked = !item.IsChecked; }"
+                                style="cursor:@(item.IsNew ? "pointer" : "default");border-bottom:1px solid #2a2a2a;@(item.IsNew ? "" : "opacity:0.45;")">
+                                <td style="padding:6px 8px;width:32px;">
+                                    @if (item.IsNew)
+                                    {
+                                        <input type="checkbox" checked="@item.IsChecked"
+                                               @onclick:stopPropagation
+                                               @onchange="() => item.IsChecked = !item.IsChecked"
+                                               style="width:15px;height:15px;cursor:pointer;accent-color:#4caf50;" />
+                                    }
+                                </td>
+                                <td style="padding:6px 4px;font-weight:600;color:#e0c97a;width:52px;">@item.Code</td>
+                                <td style="padding:6px 4px;color:#ddd;">@item.Name</td>
+                                <td style="padding:6px 10px;text-align:right;white-space:nowrap;">
+                                    @if (item.IsNew)
+                                    {
+                                        <span style="color:#4caf50;font-size:11px;">★ 新規</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:#888;font-size:11px;">✓ 登録済み</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(importMessage))
+            {
+                <div style="color:#4caf50;font-size:12px;margin-bottom:8px;">@importMessage</div>
+            }
+
+            <div class="d-flex gap-2 justify-content-end">
+                <button class="btn btn-secondary" @onclick="CloseImportModal">閉じる</button>
+                @if (importPreview.Any(p => p.IsNew && p.IsChecked))
+                {
+                    <button class="btn btn-primary" @onclick="ExecuteImport">
+                        選択を追加（@importPreview.Count(p => p.IsNew && p.IsChecked) 件）
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
 <header class="app-header">
     <h1>📈 KabuMemo</h1>
     <div style="display:flex;align-items:center;gap:12px;">
@@ -74,6 +179,20 @@
     private bool showCsvModal = false;
     private string csvText = "";
 
+    private bool showImportModal = false;
+    private string importPattern = "sbi";
+    private List<ImportItem> importPreview = [];
+    private string importError = "";
+    private string importMessage = "";
+
+    private class ImportItem
+    {
+        public string Code { get; set; } = "";
+        public string Name { get; set; } = "";
+        public bool IsNew { get; set; }
+        public bool IsChecked { get; set; }
+    }
+
     protected override async Task OnInitializedAsync()
     {
     }
@@ -82,6 +201,97 @@
 
     private void OpenSettingsModal() => showSettingsModal = true;
     private void CloseSettingsModal() => showSettingsModal = false;
+
+    private void OpenImportModal()
+    {
+        showSettingsModal = false;
+        importPreview = [];
+        importError = "";
+        importMessage = "";
+        showImportModal = true;
+    }
+    private void CloseImportModal() => showImportModal = false;
+
+    private void ToggleAllImportChecked()
+    {
+        var newItems = importPreview.Where(p => p.IsNew).ToList();
+        bool allChecked = newItems.All(p => p.IsChecked);
+        foreach (var item in newItems)
+            item.IsChecked = !allChecked;
+    }
+
+    private async Task OnImportCsvSelected(InputFileChangeEventArgs e)
+    {
+        importError = "";
+        importMessage = "";
+        importPreview = [];
+        var file = e.File;
+        if (file.Size > 5 * 1024 * 1024)
+        {
+            importError = "ファイルサイズが大きすぎます（5MB以内）。";
+            return;
+        }
+        var buffer = new byte[file.Size];
+        await using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+        await stream.ReadExactlyAsync(buffer);
+
+        var text = await JS.InvokeAsync<string>("decodeShiftJis", buffer);
+        var existing = await StockSvc.GetAllAsync();
+        var existingCodes = existing.Select(s => s.Code).ToHashSet();
+
+        var parsed = importPattern == "sbi" ? ParseSbiCsv(text) : [];
+        importPreview = parsed.Select(r => new ImportItem
+        {
+            Code = r.Code,
+            Name = r.Name,
+            IsNew = !existingCodes.Contains(r.Code),
+            IsChecked = !existingCodes.Contains(r.Code)
+        }).ToList();
+
+        if (importPreview.Count == 0)
+            importError = "銘柄データが見つかりませんでした。正しいファイルか確認してください。";
+    }
+
+    private async Task ExecuteImport()
+    {
+        var checkedItems = importPreview.Where(p => p.IsNew && p.IsChecked).ToList();
+        if (checkedItems.Count == 0) return;
+
+        var stockList = await StockSvc.GetAllAsync();
+        var existingCodes = stockList.Select(s => s.Code).ToHashSet();
+
+        foreach (var item in checkedItems)
+        {
+            if (existingCodes.Contains(item.Code)) continue;
+            stockList.Add(new StockItem { Code = item.Code, Name = item.Name, IsHolding = true });
+            existingCodes.Add(item.Code);
+        }
+
+        await StockSvc.SaveAsync(stockList);
+        importMessage = $"{checkedItems.Count}件の銘柄を追加しました。一覧画面へ移動します…";
+        foreach (var item in checkedItems) item.IsNew = false;
+        StateHasChanged();
+
+        await Task.Delay(1500);
+        showImportModal = false;
+        Nav.NavigateTo("", forceLoad: true);
+    }
+
+    private static List<(string Code, string Name)> ParseSbiCsv(string csvText)
+    {
+        var results = new List<(string Code, string Name)>();
+        foreach (var rawLine in csvText.Split('\n'))
+        {
+            var line = rawLine.Trim().TrimEnd('\r');
+            if (!line.StartsWith('"')) continue;
+            var end = line.IndexOf('"', 1);
+            if (end < 2) continue;
+            var field = line[1..end];
+            if (field.Length > 5 && field[..4].All(char.IsDigit) && field[4] == ' ')
+                results.Add((field[..4], field[5..].Trim()));
+        }
+        return [.. results.GroupBy(r => r.Code).Select(g => g.First())];
+    }
 
     private void GoSettings()
     {
@@ -111,6 +321,7 @@
         stocks = result!;
         await StockSvc.SaveAsync(stocks);
         showCsvModal = false;
+        Nav.NavigateTo("", forceLoad: true);
     }
 
     private static string ExportToCsv(List<StockItem> stocks)
