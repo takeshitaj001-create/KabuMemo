@@ -3,10 +3,9 @@
   "editor.formatOnSave": false,
   "editor.tabSize": 4,
   "editor.insertSpaces": true,
-  "editor.rulers": [120],
-
-  // C# / Blazor
-  "dotnet.defaultSolution": "KabuMemo.csproj",
+  "editor.rulers": [
+    120
+  ],
   "[csharp]": {
     "editor.defaultFormatter": "ms-dotnettools.csharp"
   },

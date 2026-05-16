@@ -5,7 +5,7 @@ using Microsoft.JSInterop;
 
 namespace KabuMemo.Services;
 
-public record GitHubFileInfo(string Name, string Sha, string DownloadUrl, string Path);
+public record GitHubFileInfo(string Name, string Sha, string Path);
 
 public class GitHubService(IJSRuntime js)
 {
@@ -65,7 +65,7 @@ public class GitHubService(IJSRuntime js)
 
             var files = items
                 .Where(i => i.Type == "file" && i.Name.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
-                .Select(i => new GitHubFileInfo(i.Name, i.Sha, i.Download_Url, i.Path))
+                .Select(i => new GitHubFileInfo(i.Name, i.Sha, i.Path))
                 .OrderByDescending(i => i.Name)
                 .ToList();
 

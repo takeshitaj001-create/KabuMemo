@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using KabuMemo.Models;
 
 namespace KabuMemo.Services;
@@ -189,8 +188,6 @@ public class StockApiService(HttpClient http)
         }
     }
 
-    private static string StripHtml(string html) =>
-        Regex.Replace(html, @"<[^>]+>", "").Trim();
 }
 
 // ---- 株価取得結果ラッパー ----
