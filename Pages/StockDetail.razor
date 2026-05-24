@@ -538,7 +538,7 @@
         && !string.IsNullOrEmpty(stock.AlarmDate)
         && string.Compare(stock.AlarmDate, DateTime.Today.ToString("yyyy-MM-dd"), StringComparison.Ordinal) <= 0;
 
-    private string YahooUrl => $"https://finance.yahoo.co.jp/quote/{Code}.T";
+    private string YahooUrl => $"https://finance.yahoo.co.jp/quote/{Code}";
     private string MinkabuUrl => $"https://minkabu.jp/stock/{Code}";
     private string KabutanUrl => $"https://kabutan.jp/stock/?code={Code}";
 
