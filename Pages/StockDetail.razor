@@ -181,7 +181,7 @@
                                                                 var yGridLines = GetChartYGridLines(cMin, cMax);
                                                                 var xLabels = GetXLabelIndices(chartData);
                                                                 <div class="chart-area">
-                                                                    <svg @ref="chartSvgRef" viewBox="0 0 320 130" style="width:100%;height:200px;display:block;cursor:crosshair;"
+                                                                    <svg @ref="chartSvgRef" viewBox="0 0 320 130" style="width:100%;height:240px;display:block;cursor:crosshair;"
                                                                          @onmousemove="OnChartMouseMove" @onmouseleave="OnChartMouseLeave"
                                                                          @ontouchmove="OnChartTouchMove" @ontouchmove:preventDefault @ontouchend="@(_ => OnChartMouseLeave())">
                                                                         @* Y軸グリッドライン *@
