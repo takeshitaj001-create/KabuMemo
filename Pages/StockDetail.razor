@@ -162,7 +162,7 @@
                                                                 {
                                                                     var period = p;
                                                                     <button class="chart-period-btn @(chartPeriod == period ? "active" : "")"
-                                                                            @onclick="() => chartPeriod = period">@period</button>
+                                                                            @onclick="() => { chartPeriod = period; tooltipIndex = null; }">@period</button>
                                                                 }
                                                             </div>
                                                             @{
@@ -173,18 +173,53 @@
                                                                 var cMin = chartData.Min(p => p.Close);
                                                                 var cMax = chartData.Max(p => p.Close);
                                                                 var line = BuildChartPoints(chartData, cMin, cMax);
-                                                                var fill = line + $" {Sv(295)},{Sv(ChartYBottom)} {Sv(5)},{Sv(ChartYBottom)}";
+                                                                var fill = line + $" {Sv(ChartXRight)},{Sv(ChartYBottom)} {Sv(ChartXLeft)},{Sv(ChartYBottom)}";
                                                                 var lastY = ChartPriceToY(chartData.Last().Close, cMin, cMax);
                                                                 var up = chartData.Last().Close >= chartData.First().Close;
                                                                 var stroke = up ? "#0066cc" : "#e03535";
-                                                                var area = up ? "rgba(0,102,204,0.1)" : "rgba(224,53,53,0.08)";
+                                                                var area = up ? "rgba(0,102,204,0.12)" : "rgba(224,53,53,0.1)";
+                                                                var yGridLines = GetChartYGridLines(cMin, cMax);
+                                                                var xLabels = GetXLabelIndices(chartData);
                                                                 <div class="chart-area">
-                                                                    <svg viewBox="0 0 300 100" style="width:100%;height:140px;display:block;">
+                                                                    <svg @ref="chartSvgRef" viewBox="0 0 320 130" style="width:100%;height:200px;display:block;cursor:crosshair;"
+                                                                         @onmousemove="OnChartMouseMove" @onmouseleave="OnChartMouseLeave"
+                                                                         @ontouchmove="OnChartTouchMove" @ontouchmove:preventDefault @ontouchend="@(_ => OnChartMouseLeave())">
+                                                                        @* Y軸グリッドライン *@
+                                                                        @foreach (var gl in yGridLines)
+                                                                        {
+                                                                            <line x1="@Sv(ChartXLeft)" y1="@Sv(gl.Y)" x2="@Sv(ChartXRight)" y2="@Sv(gl.Y)" stroke="#2a2a3a" stroke-width="0.8" />
+                                                                            @SvgText(ChartXLeft - 3, gl.Y + 3.5, "end", 8, "#666", gl.Label)
+                                                                        }
+                                                                        @* エリア塗りつぶし・折れ線 *@
                                                                         <polyline points="@fill" fill="@area" stroke="none" />
-                                                                        <polyline points="@line" fill="none" stroke="@stroke" stroke-width="1.8" />
-                                                                        <circle cx="295" cy="@Sv(lastY)" r="3" fill="@stroke" />
-                                                                        @SvgText(5, 13, "start", 9, "#888", cMax.ToString("N0"))
-                                                                        @SvgText(5, 88, "start", 9, "#888", cMin.ToString("N0"))
+                                                                        <polyline points="@line" fill="none" stroke="@stroke" stroke-width="1.8" stroke-linejoin="round" />
+                                                                        <circle cx="@Sv(ChartXRight)" cy="@Sv(lastY)" r="3" fill="@stroke" />
+                                                                        @* X軸ライン・日付ラベル *@
+                                                                        <line x1="@Sv(ChartXLeft)" y1="@Sv(ChartYBottom)" x2="@Sv(ChartXRight)" y2="@Sv(ChartYBottom)" stroke="#333" stroke-width="0.5" />
+                                                                        @foreach (var xl in xLabels)
+                                                                        {
+                                                                            var xlX = ChartXLeft + (double)xl.Idx / (chartData.Count - 1) * (ChartXRight - ChartXLeft);
+                                                                            <line x1="@Sv(xlX)" y1="@Sv(ChartYBottom)" x2="@Sv(xlX)" y2="@Sv(ChartYBottom + 3)" stroke="#444" stroke-width="0.5" />
+                                                                            @SvgText(xlX, ChartYBottom + 11, "middle", 8, "#777", xl.Label)
+                                                                        }
+                                                                        @* ツールチップ *@
+                                                                        @if (tooltipIndex.HasValue && tooltipIndex.Value < chartData.Count)
+                                                                        {
+                                                                            var td = chartData[tooltipIndex.Value];
+                                                                            var tpX = ChartXLeft + (double)tooltipIndex.Value / (chartData.Count - 1) * (ChartXRight - ChartXLeft);
+                                                                            var tpY = ChartPriceToY(td.Close, cMin, cMax);
+                                                                            var bubLeft = tpX > (ChartXLeft + ChartXRight) / 2;
+                                                                            var bx = bubLeft ? tpX - 76 : tpX + 6;
+                                                                            var by = Math.Max(ChartYTop + 2, Math.Min(tpY - 13, ChartYBottom - 26));
+                                                                            var tLabel = DateTime.TryParse(td.Date, out var tdd) ? tdd.ToString("M/d") : td.Date;
+                                                                            <line x1="@Sv(tpX)" y1="@Sv(ChartYTop)" x2="@Sv(tpX)" y2="@Sv(ChartYBottom)" stroke="#888" stroke-width="0.8" stroke-dasharray="2,2" />
+                                                                            <circle cx="@Sv(tpX)" cy="@Sv(tpY)" r="4.5" fill="@stroke" stroke="#121212" stroke-width="1.5" />
+                                                                            <rect x="@Sv(bx)" y="@Sv(by)" width="72" height="26" fill="#1c2a3a" rx="3" opacity="0.92" />
+                                                                            @SvgText(bx + 5, by + 10, "start", 8, "#aaa", tLabel)
+                                                                            @SvgText(bx + 5, by + 21, "start", 10, "#eee", $"¥{td.Close:N0}", bold: true)
+                                                                        }
+                                                                        @* インタラクション用透明レイヤー（最前面） *@
+                                                                        <rect x="@Sv(ChartXLeft)" y="@Sv(ChartYTop)" width="@Sv(ChartXRight - ChartXLeft)" height="@Sv(ChartYBottom - ChartYTop)" fill="transparent" />
                                                                     </svg>
                                                                 </div>
                                                             }
@@ -497,6 +532,8 @@
     private string dividendErrorMessage = "";
     private bool isRefreshingChart = false;
     private string chartPeriod = "3M";
+    private int? tooltipIndex;
+    private ElementReference chartSvgRef;
 
     // 共有MDモーダル
     private bool showSharedMdModal = false;
@@ -650,7 +687,8 @@
 
     // ---- チャート描画ヘルパー ----
 
-    private const double ChartYTop = 8.0, ChartYBottom = 88.0;
+    private const double ChartYTop = 8.0, ChartYBottom = 100.0;
+    private const double ChartXLeft = 46.0, ChartXRight = 314.0;
 
     private List<ChartPoint> GetFilteredChartData()
     {
@@ -677,7 +715,70 @@
     {
         var n = data.Count - 1;
         return string.Join(" ", data.Select((p, i) =>
-            $"{Sv(5 + (double)i / n * 290)},{Sv(ChartPriceToY(p.Close, min, max))}"));
+            $"{Sv(ChartXLeft + (double)i / n * (ChartXRight - ChartXLeft))},{Sv(ChartPriceToY(p.Close, min, max))}"));
+    }
+
+    private static List<(double Y, string Label)> GetChartYGridLines(decimal min, decimal max)
+    {
+        if (max <= min) return [];
+        return
+        [
+            (ChartYBottom, min.ToString("N0")),
+            (ChartPriceToY(min + (max - min) * 0.25m, min, max), (min + (max - min) * 0.25m).ToString("N0")),
+            (ChartPriceToY(min + (max - min) * 0.50m, min, max), (min + (max - min) * 0.50m).ToString("N0")),
+            (ChartPriceToY(min + (max - min) * 0.75m, min, max), (min + (max - min) * 0.75m).ToString("N0")),
+            (ChartYTop, max.ToString("N0")),
+        ];
+    }
+
+    private List<(int Idx, string Label)> GetXLabelIndices(List<ChartPoint> data)
+    {
+        var result = new List<(int, string)>();
+        if (data.Count < 2) return result;
+        string? seenKey = null;
+        for (int i = 0; i < data.Count; i++)
+        {
+            if (!DateTime.TryParse(data[i].Date, out var d)) continue;
+            var key = chartPeriod switch
+            {
+                "1M" => $"{d.Year}{d.Month:D2}{(d.Day - 1) / 7}",
+                "3M" => $"{d.Year}{d.Month:D2}",
+                "6M" => $"{d.Year}{(d.Month - 1) / 2}",
+                _ => $"{d.Year}{(d.Month - 1) / 3}",
+            };
+            if (key == seenKey) continue;
+            seenKey = key;
+            var label = chartPeriod switch
+            {
+                "1M" => $"{d.Month}/{d.Day}",
+                "3M" or "6M" => $"{d.Month}月",
+                _ => $"{d.Year % 100}/{d.Month}",
+            };
+            result.Add((i, label));
+        }
+        return result;
+    }
+
+    private async Task OnChartMouseMove(MouseEventArgs e)
+        => await HandleTooltipAt(e.ClientX, e.ClientY);
+
+    private async Task OnChartTouchMove(TouchEventArgs e)
+    {
+        if (e.Touches.Length > 0)
+            await HandleTooltipAt(e.Touches[0].ClientX, e.Touches[0].ClientY);
+    }
+
+    private void OnChartMouseLeave() => tooltipIndex = null;
+
+    private async Task HandleTooltipAt(double clientX, double clientY)
+    {
+        var data = GetFilteredChartData();
+        if (data.Count < 2) return;
+        var coords = await JS.InvokeAsync<double[]>("getSvgCoords", chartSvgRef, clientX, clientY);
+        var ratio = (coords[0] - ChartXLeft) / (ChartXRight - ChartXLeft);
+        ratio = Math.Clamp(ratio, 0, 1);
+        tooltipIndex = (int)Math.Round(ratio * (data.Count - 1));
+        StateHasChanged();
     }
 
     private async Task RefreshDividends()

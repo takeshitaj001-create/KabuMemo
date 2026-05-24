@@ -48,6 +48,18 @@
       }
     })();
   </script>
+  <script>
+    window.getSvgCoords = function (svgEl, clientX, clientY) {
+      if (!svgEl) return [0, 0];
+      var pt = svgEl.createSVGPoint();
+      pt.x = clientX;
+      pt.y = clientY;
+      var ctm = svgEl.getScreenCTM();
+      if (!ctm) return [0, 0];
+      var p = pt.matrixTransform(ctm.inverse());
+      return [p.x, p.y];
+    };
+  </script>
   <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
 </body>
 
