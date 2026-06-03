@@ -1387,9 +1387,23 @@ tr.highlight-row td:first-child {
 /* トップバー */
 .disc-topbar {
     display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.disc-topbar-row1 {
+    display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 14px;
+}
+
+.disc-topbar-row2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .disc-title {

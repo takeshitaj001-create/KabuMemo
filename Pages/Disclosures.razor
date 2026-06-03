@@ -10,14 +10,16 @@
 
     @* ヘッダーバー *@
     <div class="disc-topbar">
-        <button class="btn-back" @onclick='() => Nav.NavigateTo("")'>← 一覧に戻る</button>
-        <h2 class="disc-title">IR情報一覧</h2>
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div class="disc-topbar-row1">
+            <button class="btn-back" @onclick='() => Nav.NavigateTo("")'>← 一覧に戻る</button>
+            <h2 class="disc-title">IR情報一覧</h2>
+        </div>
+        <div class="disc-topbar-row2">
             @if (cache != null)
             {
-                <span style="font-size:13px;font-weight:700;color:#333;">最終取得: @cache.FetchedAt.ToString("HH:mm")</span>
+                <span style="font-size:11px;color:#888;">最終取得: @cache.FetchedAt.ToString("HH:mm")</span>
             }
-            <span style="font-size:13px;font-weight:700;color:#333;">
+            <span style="font-size:11px;color:#888;">
                 次回更新: @(autoRefreshEnabled && !string.IsNullOrEmpty(nextRefreshAt) ? nextRefreshAt : "なし")
             </span>
             <button class="btn-auto-refresh @(autoRefreshEnabled ? "on" : "off")"
