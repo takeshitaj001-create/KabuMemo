@@ -288,6 +288,8 @@
     private int updatedCount = 0;
     private string lastPriceUpdateTime = "";
     private List<string> errorLog = [];
+    private bool _isInitialized = false;
+    private bool _startupDone = false;
 
 
     protected override async Task OnInitializedAsync()
@@ -295,6 +297,40 @@
         stocks = await StockSvc.GetAllAsync();
         if (stocks.Any(s => !string.IsNullOrEmpty(s.LastUpdated)))
             lastPriceUpdateTime = stocks.Where(s => s.LastUpdated != null).Max(s => s.LastUpdated) ?? "";
+        _isInitialized = true;
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        // OnInitializedAsync 完了後の最初のレンダリングで1回だけ起動
+        if (_startupDone || !_isInitialized) return Task.CompletedTask;
+        _startupDone = true;
+        _ = AutoUpdateIfStaleAsync();
+        return Task.CompletedTask;
+    }
+
+    private async Task AutoUpdateIfStaleAsync()
+    {
+        if (stocks.Count == 0) return;
+
+        bool isStale;
+        if (string.IsNullOrEmpty(lastPriceUpdateTime))
+        {
+            isStale = true;
+        }
+        else if (DateTime.TryParseExact(lastPriceUpdateTime, "yyyy-MM-dd HH:mm",
+                     System.Globalization.CultureInfo.InvariantCulture,
+                     System.Globalization.DateTimeStyles.None, out var lastUpdate))
+        {
+            isStale = (DateTime.Now - lastUpdate) >= TimeSpan.FromMinutes(30);
+        }
+        else
+        {
+            isStale = true;
+        }
+
+        if (isStale)
+            await InvokeAsync(UpdateAllPrices);
     }
 
     private static bool IsAlarm(StockItem item)

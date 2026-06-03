@@ -152,6 +152,8 @@
     private int fetchTotal = 0;
     private CancellationTokenSource? cts;
     private bool autoRefreshEnabled = true;
+    private bool _isInitialized = false;
+    private bool _startupDone = false;
 
     private List<DisclosureItem> filteredItems =>
         string.IsNullOrEmpty(filterCode)
@@ -173,13 +175,31 @@
 
         if (!string.IsNullOrEmpty(InitialCode))
             filterCode = InitialCode;
+
+        // OnInitializedAsync 完了をマーク（OnAfterRenderAsync より先に完了しない場合がある）
+        _isInitialized = true;
     }
 
     protected override Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return Task.CompletedTask;
-        _ = RunScheduledRefreshAsync();
+        // OnInitializedAsync 完了後の最初のレンダリングで1回だけ起動
+        if (_startupDone || !_isInitialized) return Task.CompletedTask;
+        _startupDone = true;
+        _ = InitialRefreshIfStaleAsync();
         return Task.CompletedTask;
+    }
+
+    private async Task InitialRefreshIfStaleAsync()
+    {
+        // 最終更新から5分以上経過している場合は画面遷移時に即時更新
+        if (stocks.Count > 0)
+        {
+            bool isStale = cache == null ||
+                           (DateTime.Now - cache.FetchedAt) >= TimeSpan.FromMinutes(5);
+            if (isStale)
+                await InvokeAsync(RefreshAsync);
+        }
+        _ = RunScheduledRefreshAsync();
     }
 
     private async Task RunScheduledRefreshAsync()
