@@ -163,10 +163,9 @@
 }
 
 <header class="app-header">
-    <h1>📈 KabuMemo</h1>
+    <h1>📈 株価メモ</h1>
     <div style="display:flex;align-items:center;gap:12px;">
-        <span class="last-updated">@DateTime.Now.ToString("yyyy-MM-dd HH:mm") 現在</span>
-        <button class="btn-disc-nav" title="IR情報" @onclick='() => Nav.NavigateTo("disclosures")'>📋</button>
+<button class="btn-disc-nav" @onclick='() => Nav.NavigateTo("disclosures")'>IR情報一覧</button>
         <button class="btn-gear" title="高度な操作" @onclick="OpenSettingsModal">⚙</button>
     </div>
 </header>

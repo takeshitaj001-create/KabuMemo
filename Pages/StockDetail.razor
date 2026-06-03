@@ -4,6 +4,7 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @inject GitHubService GhSvc
+@inject DisclosureService DiscSvc
 
 <PageTitle>@Code - KabuMemo</PageTitle>
 
@@ -86,6 +87,39 @@
                 <input type="date" class="date-input" value="@stock.AlarmDate"
                        @oninput="e => { stock.AlarmDate = e.Value?.ToString(); }" @onblur="SaveAsync" />
             </div>
+        </div>
+
+        <div class="detail-memo-card">
+            <div class="ir-recent-header">
+                <span style="font-size:15px;font-weight:700;">IR情報</span>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <button class="btn-refresh-sm" @onclick="LoadRecentDisclosuresAsync" disabled="@isLoadingDisclosures">
+                        @(isLoadingDisclosures ? "取得中…" : "🔄 更新")
+                    </button>
+                    <button class="btn-refresh-sm" @onclick='() => Nav.NavigateTo($"disclosures?code={Code}")'>
+                        IR情報一覧 →
+                    </button>
+                </div>
+            </div>
+            @if (isLoadingDisclosures)
+            {
+                <div class="ir-recent-empty">取得中…</div>
+            }
+            else if (recentDisclosures.Count == 0)
+            {
+                <div class="ir-recent-empty">IR情報なし</div>
+            }
+            else
+            {
+                @foreach (var item in recentDisclosures)
+                {
+                    <a class="ir-recent-item" href="@item.Url" target="_blank" rel="noopener noreferrer">
+                        <span class="ir-recent-date">@item.Date</span>
+                        <span class="ir-recent-cat">@item.Category</span>
+                        <span class="ir-recent-title">@item.Title</span>
+                    </a>
+                }
+            }
         </div>
 
         <div class="detail-main-layout">
@@ -532,6 +566,8 @@
     private string dividendErrorMessage = "";
     private bool isRefreshingChart = false;
     private string chartPeriod = "3M";
+    private List<DisclosureItem> recentDisclosures = [];
+    private bool isLoadingDisclosures = false;
     private int? tooltipIndex;
     private ElementReference chartSvgRef;
 
@@ -568,7 +604,19 @@
             // 配当: 未取得のみ
             if (stock.DividendHistory == null)
                 _ = RefreshDividends();
+            // IR情報: 毎回取得
+            _ = LoadRecentDisclosuresAsync();
         }
+    }
+
+    private async Task LoadRecentDisclosuresAsync()
+    {
+        if (stock == null) return;
+        isLoadingDisclosures = true;
+        StateHasChanged();
+        recentDisclosures = await DiscSvc.GetRecentAsync(stock, 3);
+        isLoadingDisclosures = false;
+        StateHasChanged();
     }
 
     private bool IsAlarm => stock != null

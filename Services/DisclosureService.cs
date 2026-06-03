@@ -41,6 +41,25 @@ public partial class DisclosureService(HttpClient http, IJSRuntime js)
 
     // ---- 取得処理 ----
 
+    public async Task<List<DisclosureItem>> GetRecentAsync(StockItem stock, int count = 3)
+    {
+        var cache = await GetCacheAsync();
+        if (IsCacheValid(cache) && cache!.Items.Any(x => x.Code == stock.Code))
+        {
+            return cache.Items
+                .Where(x => x.Code == stock.Code)
+                .OrderByDescending(x => x.Date + x.Time)
+                .Take(count)
+                .ToList();
+        }
+
+        var (items, _) = await FetchForStockAsync(stock);
+        return items
+            .OrderByDescending(x => x.Date + x.Time)
+            .Take(count)
+            .ToList();
+    }
+
     public async Task<(List<DisclosureItem> items, List<string> errors)> FetchAllAsync(
         IReadOnlyList<StockItem> stocks,
         Action<int, int>? onProgress = null)

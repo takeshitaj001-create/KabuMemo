@@ -731,6 +731,74 @@ tr.highlight-row td:first-child {
     max-width: 160px;
 }
 
+/* IR情報（最新3件）*/
+.ir-recent-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 8px;
+}
+
+.ir-recent-empty {
+    font-size: 12px;
+    color: #aaa;
+    text-align: center;
+    padding: 8px 0;
+}
+
+.ir-recent-item {
+    display: grid;
+    grid-template-columns: 80px 52px 1fr;
+    align-items: baseline;
+    gap: 6px;
+    padding: 6px 2px;
+    border-bottom: 1px solid #f0f0f0;
+    text-decoration: none;
+    color: inherit;
+}
+
+.ir-recent-item:last-child {
+    border-bottom: none;
+}
+
+.ir-recent-item:hover {
+    background: #f7f9fc;
+    border-radius: 4px;
+}
+
+.ir-recent-date {
+    font-size: 11px;
+    color: #888;
+    white-space: nowrap;
+}
+
+.ir-recent-cat {
+    font-size: 10px;
+    background: #e8f0fe;
+    color: #1a73e8;
+    border-radius: 3px;
+    padding: 1px 5px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ir-recent-title {
+    font-size: 12px;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ir-recent-item:hover .ir-recent-title {
+    color: #1a73e8;
+}
+
 /* 詳細2カラムグリッド */
 .detail-main-layout {
     display: grid;
@@ -1269,19 +1337,21 @@ tr.highlight-row td:first-child {
 /* 開示ナビボタン（ヘッダー） */
 .btn-disc-nav {
     background: none;
-    border: 1px solid #444;
+    border: 1px solid #ffb300;
     border-radius: 6px;
     padding: 6px 10px;
-    font-size: 16px;
+    font-size: 13px;
     cursor: pointer;
-    color: #ddd;
+    color: #ffb300;
     line-height: 1;
+    font-weight: 600;
     transition: background 0.15s, border-color 0.15s;
 }
 
 .btn-disc-nav:hover {
-    background: rgba(255,255,255,0.1);
-    border-color: #888;
+    background: rgba(255,179,0,0.12);
+    border-color: #ffd54f;
+    color: #ffd54f;
 }
 
 /* 自動更新トグルボタン */

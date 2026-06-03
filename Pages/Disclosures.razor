@@ -4,14 +4,14 @@
 @inject DisclosureService DiscSvc
 @inject NavigationManager Nav
 
-<PageTitle>IR情報 - KabuMemo</PageTitle>
+<PageTitle>IR情報一覧 - KabuMemo</PageTitle>
 
 <div class="container-fluid px-3 py-3">
 
     @* ヘッダーバー *@
     <div class="disc-topbar">
         <button class="btn-back" @onclick='() => Nav.NavigateTo("")'>← 一覧に戻る</button>
-        <h2 class="disc-title">IR情報</h2>
+        <h2 class="disc-title">IR情報一覧</h2>
         <div style="display:flex;align-items:center;gap:8px;">
             @if (cache != null)
             {
@@ -134,6 +134,9 @@
 </div>
 
 @code {
+    [SupplyParameterFromQuery(Name = "code")]
+    public string? InitialCode { get; set; }
+
     private List<StockItem> stocks = [];
     private DisclosureCache? cache;
     private List<DisclosureItem> allItems = [];
@@ -165,6 +168,9 @@
 
         if (cache != null)
             allItems = cache.Items;
+
+        if (!string.IsNullOrEmpty(InitialCode))
+            filterCode = InitialCode;
     }
 
     protected override Task OnAfterRenderAsync(bool firstRender)
