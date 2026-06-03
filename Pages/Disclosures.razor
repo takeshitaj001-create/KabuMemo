@@ -1,0 +1,272 @@
+@page "/disclosures"
+@implements IDisposable
+@inject StockService StockSvc
+@inject DisclosureService DiscSvc
+@inject NavigationManager Nav
+
+<PageTitle>IR情報 - KabuMemo</PageTitle>
+
+<div class="container-fluid px-3 py-3">
+
+    @* ヘッダーバー *@
+    <div class="disc-topbar">
+        <button class="btn-back" @onclick='() => Nav.NavigateTo("")'>← 一覧に戻る</button>
+        <h2 class="disc-title">IR情報</h2>
+        <div style="display:flex;align-items:center;gap:8px;">
+            @if (cache != null)
+            {
+                <span style="font-size:13px;font-weight:700;color:#333;">最終取得: @cache.FetchedAt.ToString("HH:mm")</span>
+            }
+            <span style="font-size:13px;font-weight:700;color:#333;">
+                次回更新: @(autoRefreshEnabled && !string.IsNullOrEmpty(nextRefreshAt) ? nextRefreshAt : "なし")
+            </span>
+            <button class="btn-auto-refresh @(autoRefreshEnabled ? "on" : "off")"
+                    @onclick="ToggleAutoRefresh">
+                @(autoRefreshEnabled ? "自動更新：オン" : "自動更新：オフ")
+            </button>
+            <button class="btn-refresh disc-refresh-btn"
+                    @onclick="RefreshAsync"
+                    disabled="@isFetching">
+                @if (isFetching)
+                {
+                    <span>取得中 @fetchDone/@fetchTotal …</span>
+                }
+                else
+                {
+                    <span>🔄 更新</span>
+                }
+            </button>
+        </div>
+    </div>
+
+
+    @* エラー表示 *@
+    @if (errors.Count > 0)
+    {
+        <div class="disc-error-panel">
+            <div class="disc-error-header">
+                取得エラー (@errors.Count 件)
+                <button @onclick="() => errors.Clear()" class="disc-error-close">✕</button>
+            </div>
+            @foreach (var e in errors)
+            {
+                <div class="disc-error-line">@e</div>
+            }
+        </div>
+    }
+
+    @* フィルター *@
+    @if (allItems.Count > 0)
+    {
+        <div class="disc-filter-row">
+            <select class="disc-filter-select" @bind="filterCode">
+                <option value="">全銘柄 (@allItems.Count 件)</option>
+                @foreach (var sc in allCodes)
+                {
+                    <option value="@sc">@sc @(stocks.FirstOrDefault(s => s.Code == sc)?.Name ?? "")</option>
+                }
+            </select>
+        </div>
+    }
+
+    @* プログレスバー *@
+    @if (isFetching && fetchTotal > 0)
+    {
+        var pct = (int)((double)fetchDone / fetchTotal * 100);
+        <div class="disc-progress-wrap">
+            <div class="disc-progress-bar" style="width:@pct%"></div>
+        </div>
+        <div class="disc-progress-label">@fetchDone / @fetchTotal 銘柄完了</div>
+    }
+
+    @* 空ステート *@
+    @if (!isFetching && allItems.Count == 0)
+    {
+        <div class="empty-state">
+            <p>IR情報がありません。</p>
+            @if (stocks.Count == 0)
+            {
+                <p style="font-size:12px;color:#aaa;">一覧画面で銘柄を登録してください。</p>
+            }
+            else
+            {
+                <button class="btn-refresh" @onclick="RefreshAsync">取得する（@stocks.Count 銘柄）</button>
+            }
+        </div>
+    }
+
+    @* 開示リスト *@
+    @if (filteredItems.Count > 0)
+    {
+        <div class="disc-list">
+            @foreach (var item in filteredItems)
+            {
+                var isNew = !string.IsNullOrEmpty(lastSeen) &&
+                            string.Compare(item.Date + " " + item.Time, lastSeen) > 0;
+                var isToday = item.Date == DateTime.Now.ToString("yyyy-MM-dd");
+                <div class="disc-item @(isToday ? "disc-item-today" : isNew ? "disc-item-new" : "")">
+                    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:4px;">
+                        <span class="disc-date">@item.Date@(string.IsNullOrEmpty(item.Time) ? "" : " " + item.Time)</span>
+                        <span class="disc-code-badge">@item.Code</span>
+                        <span class="disc-name">@item.StockName</span>
+                        <span class="disc-cat disc-cat-@CatClass(item.Category)">@item.Category</span>
+                        @if (isNew)
+                        {
+                            <span class="disc-new-badge">NEW</span>
+                        }
+                    </div>
+                    <div class="disc-item-title">
+                        @if (!string.IsNullOrEmpty(item.Url))
+                        {
+                            <a href="@item.Url" target="_blank" rel="noopener noreferrer"
+                               class="disc-link">@item.Title ↗</a>
+                        }
+                        else
+                        {
+                            @item.Title
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+</div>
+
+@code {
+    private List<StockItem> stocks = [];
+    private DisclosureCache? cache;
+    private List<DisclosureItem> allItems = [];
+    private List<string> errors = [];
+    private string filterCode = "";
+    private string lastSeen = "";
+    private string nextRefreshAt = "";
+    private bool isFetching = false;
+    private bool isCacheValid = false;
+    private int fetchDone = 0;
+    private int fetchTotal = 0;
+    private CancellationTokenSource? cts;
+    private bool autoRefreshEnabled = true;
+
+    private List<DisclosureItem> filteredItems =>
+        string.IsNullOrEmpty(filterCode)
+            ? allItems
+            : allItems.Where(x => x.Code == filterCode).ToList();
+
+    private List<string> allCodes =>
+        allItems.Select(x => x.Code).Distinct().OrderBy(x => x).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        stocks = await StockSvc.GetAllAsync();
+        cache = await DiscSvc.GetCacheAsync();
+        isCacheValid = DiscSvc.IsCacheValid(cache);
+        lastSeen = await DiscSvc.GetLastSeenAsync();
+
+        if (cache != null)
+            allItems = cache.Items;
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return Task.CompletedTask;
+        _ = RunScheduledRefreshAsync();
+        return Task.CompletedTask;
+    }
+
+    private async Task RunScheduledRefreshAsync()
+    {
+        cts = new CancellationTokenSource();
+        try
+        {
+            while (!cts.Token.IsCancellationRequested)
+            {
+                // 次の5分境界まで待機（表示を先に更新）
+                var delay = CalcDelayToNext5Min();
+                nextRefreshAt = DateTime.Now.Add(delay).ToString("HH:mm");
+                await InvokeAsync(StateHasChanged);
+
+                await Task.Delay(delay, cts.Token);
+                if (cts.Token.IsCancellationRequested) break;
+
+                // 更新実行
+                await InvokeAsync(RefreshAsync);
+
+                // 更新完了直後に次回時刻を再計算して即時反映
+                nextRefreshAt = DateTime.Now.Add(CalcDelayToNext5Min()).ToString("HH:mm");
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private static TimeSpan CalcDelayToNext5Min()
+    {
+        var now = DateTime.Now;
+        var nextMin = (now.Minute / 5 + 1) * 5;
+        var next = nextMin < 60
+            ? now.Date.AddHours(now.Hour).AddMinutes(nextMin)
+            : now.Date.AddHours(now.Hour + 1);
+        return next - now;
+    }
+
+    private void ToggleAutoRefresh()
+    {
+        autoRefreshEnabled = !autoRefreshEnabled;
+        if (autoRefreshEnabled)
+        {
+            _ = RunScheduledRefreshAsync();
+        }
+        else
+        {
+            cts?.Cancel();
+            nextRefreshAt = "";
+        }
+    }
+
+    public void Dispose()
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (isFetching || stocks.Count == 0) return;
+
+        isFetching = true;
+        fetchDone = 0;
+        fetchTotal = stocks.Count;
+        errors.Clear();
+        StateHasChanged();
+
+        var (items, errs) = await DiscSvc.FetchAllAsync(stocks, (done, total) =>
+        {
+            fetchDone = done;
+            fetchTotal = total;
+            InvokeAsync(StateHasChanged);
+        });
+
+        allItems = items;
+        errors = errs;
+        cache = new() { FetchedAt = DateTime.Now, Items = items };
+        isCacheValid = true;
+
+        await DiscSvc.SaveCacheAsync(items);
+        await DiscSvc.MarkAllSeenAsync();
+        lastSeen = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+
+        isFetching = false;
+        StateHasChanged();
+    }
+
+    private static string CatClass(string category) => category switch
+    {
+        "決算" => "kessan",
+        "配当" => "haito",
+        "業績" => "gyoseki",
+        "M&A" => "ma",
+        "株主総会" => "soukai",
+        _ => "other"
+    };
+}

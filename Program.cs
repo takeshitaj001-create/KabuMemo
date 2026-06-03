@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.JSInterop;
 using KabuMemo;
 using KabuMemo.Services;
 
@@ -12,6 +13,10 @@ builder.Services.AddScoped<StockService>();
 builder.Services.AddScoped<GitHubService>();
 builder.Services.AddScoped(_ => new StockApiService(
     new HttpClient { Timeout = TimeSpan.FromSeconds(10) }
+));
+builder.Services.AddScoped<DisclosureService>(sp => new DisclosureService(
+    new HttpClient { Timeout = TimeSpan.FromSeconds(15) },
+    sp.GetRequiredService<IJSRuntime>()
 ));
 
 await builder.Build().RunAsync();

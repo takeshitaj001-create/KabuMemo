@@ -261,6 +261,74 @@ async function handleTdnet(code) {
   });
 }
 
+async function handleDisclosures(code) {
+  // /4591/ir を直接取得（Eコード変換不要）
+  const resp = await fetch(`https://irbank.net/${encodeURIComponent(code)}/ir`, {
+    headers: {
+      'User-Agent': UA,
+      'Accept': 'text/html',
+      'Accept-Language': 'ja-JP,ja;q=0.9',
+      'Referer': 'https://irbank.net/',
+    },
+    redirect: 'follow',
+  });
+  if (!resp.ok) throw new Error(`irbank.net HTTP ${resp.status}`);
+
+  const html = await resp.text();
+  const items = parseIrBankIr(html);
+
+  return new Response(JSON.stringify(items), {
+    headers: { ...CORS, 'Content-Type': 'application/json' },
+  });
+}
+
+function parseIrBankIr(html) {
+  const items = [];
+  const seen = new Set();
+
+  // title 属性に "（YYYY/MM/DD HH:MM提出）" が含まれる nxq リンクを全て抽出
+  // sdl（直近）・dsp（過去）どちらの構造でも title 属性の形式は共通
+  const linkRegex = /<a\s+class="nxq"\s+title="([^"]+)"\s+href="([^"]+)"/gi;
+  let m;
+
+  while ((m = linkRegex.exec(html)) !== null) {
+    const titleAttr = m[1];
+    const href = m[2];
+
+    if (!href || href.startsWith('#') || href.startsWith('?')) continue;
+
+    // title 属性から日付・時刻を抽出: 「（2026/6/3 12:30提出）」
+    const dtMatch = titleAttr.match(/（(\d{4})\/(\d{1,2})\/(\d{1,2})\s+(\d{2}:\d{2})提出）/);
+    if (!dtMatch) continue;
+
+    const date = `${dtMatch[1]}-${dtMatch[2].padStart(2, '0')}-${dtMatch[3].padStart(2, '0')}`;
+    const time = dtMatch[4];
+
+    // タイトル整形: "コード 会社名 | " と末尾の提出日時を除去
+    const cleanTitle = titleAttr
+      .replace(/^\d+\s[^|]+\|\s*/, '')
+      .replace(/（\d{4}\/\d{1,2}\/\d{1,2}\s+\d{2}:\d{2}提出）$/, '')
+      .trim();
+
+    if (!cleanTitle || cleanTitle.length < 3) continue;
+
+    const url = href.startsWith('http') ? href : 'https://irbank.net' + href;
+
+    const key = cleanTitle + date;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    items.push({ date, time, title: cleanTitle, url });
+  }
+
+  // 日付降順・直近1年に絞る
+  items.sort((a, b) => b.date.localeCompare(a.date));
+  const cutoff = new Date();
+  cutoff.setFullYear(cutoff.getFullYear() - 1);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+  return items.filter(x => x.date >= cutoffStr);
+}
+
 async function handleChart(code) {
   if (!cachedSession) await refreshSession();
   const { crumb, cookies } = cachedSession;
@@ -553,6 +621,12 @@ export default {
         const code = path.slice('/api/tdnet/'.length);
         if (!code) return new Response('code required', { status: 400, headers: CORS });
         return await handleTdnet(code);
+      }
+
+      if (path.startsWith('/api/disclosures/')) {
+        const code = path.slice('/api/disclosures/'.length);
+        if (!code) return new Response('code required', { status: 400, headers: CORS });
+        return await handleDisclosures(code);
       }
 
       if (path.startsWith('/api/name/')) {
