@@ -530,15 +530,15 @@
                     <InputFile id="md-file-input" OnChange="OnMdFileSelected" accept=".md,.txt" style="display:none;" />
                     <label for="md-file-input" class="btn-refresh-sm" style="cursor:pointer;">📄 ローカル取込</label>
                     <button class="btn-refresh-sm" @onclick="OpenSharedModalAsync">☁ 共有から選択</button>
-                    @if (!string.IsNullOrEmpty(stock.MdContent))
+                    @if (!string.IsNullOrEmpty(stock?.MdContent))
                     {
                         <button class="btn-refresh-sm" style="color:#e57373;" @onclick="ClearMdContent">✕ クリア</button>
                     }
                 </div>
             </div>
-            @if (!string.IsNullOrEmpty(stock.MdContent))
+            @if (!string.IsNullOrEmpty(stock?.MdContent))
             {
-                <div class="md-content">@((MarkupString)RenderMarkdown(stock.MdContent))</div>
+                <div class="md-content">@((MarkupString)RenderMarkdown(stock!.MdContent!))</div>
             }
             else
             {
