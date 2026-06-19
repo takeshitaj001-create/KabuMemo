@@ -3,6 +3,7 @@
 @inject StockService StockSvc
 @inject DisclosureService DiscSvc
 @inject NavigationManager Nav
+@inject WatchListStateService WatchState
 
 <PageTitle>IR情報一覧 - KabuMemo</PageTitle>
 
@@ -165,7 +166,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        stocks = await StockSvc.GetAllAsync();
+        var allStocks = await StockSvc.GetAllAsync();
+        stocks = FilterByActiveList(allStocks);
+        WatchState.OnChange += OnWatchStateChanged;
         cache = await DiscSvc.GetCacheAsync();
         isCacheValid = DiscSvc.IsCacheValid(cache);
         lastSeen = await DiscSvc.GetLastSeenAsync();
@@ -254,8 +257,28 @@
 
     public void Dispose()
     {
+        WatchState.OnChange -= OnWatchStateChanged;
         cts?.Cancel();
         cts?.Dispose();
+    }
+
+    private List<StockItem> FilterByActiveList(List<StockItem> all)
+    {
+        var active = WatchState.ActiveList;
+        if (active == null) return all;
+        return all.Where(s => active.StockCodes.Contains(s.Code)).ToList();
+    }
+
+    private void OnWatchStateChanged()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            var allStocks = await StockSvc.GetAllAsync();
+            stocks = FilterByActiveList(allStocks);
+            filterCode = "";
+            allItems = [];
+            await RefreshAsync();
+        });
     }
 
     private async Task RefreshAsync()

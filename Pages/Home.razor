@@ -2,6 +2,9 @@
 @inject StockService StockSvc
 @inject StockApiService ApiSvc
 @inject NavigationManager Nav
+@inject WatchListService WatchSvc
+@inject WatchListStateService WatchState
+@implements IDisposable
 
 <PageTitle>株価メモ</PageTitle>
 
@@ -9,12 +12,28 @@
 {
     <div class="modal-overlay" @onclick="CancelDelete">
         <div class="modal-box" @onclick:stopPropagation>
-            <h3 style="margin:0 0 12px;font-size:18px;">削除の確認</h3>
-            <p style="margin:0 0 20px;">銘柄コード「@deleteTargetCode」を削除しますか？</p>
-            <div class="d-flex gap-2 justify-content-end">
-                <button class="btn btn-secondary" @onclick="CancelDelete">キャンセル</button>
-                <button class="btn btn-danger" @onclick="ConfirmDelete">削除</button>
-            </div>
+            @if (deleteIsLastList)
+            {
+                <h3 style="margin:0 0 12px;font-size:18px;">⚠ 銘柄を完全削除</h3>
+                <p style="margin:0 0 20px;font-size:14px;">
+                    「@deleteTargetCode」はどのリストにも属さなくなります。<br />
+                    データも完全に削除されます。
+                </p>
+                <div class="d-flex gap-2 justify-content-end">
+                    <button class="btn btn-secondary" @onclick="CancelDelete">キャンセル</button>
+                    <button class="btn btn-danger" @onclick="ConfirmDelete">完全削除する</button>
+                </div>
+            }
+            else
+            {
+                <h3 style="margin:0 0 12px;font-size:18px;">リストから除外</h3>
+                <p style="margin:0 0 4px;font-size:14px;">「@deleteTargetCode」をこのリストから除外します。</p>
+                <p style="margin:0 0 20px;font-size:12px;color:#aaa;">※ 他のリストのデータは残ります。</p>
+                <div class="d-flex gap-2 justify-content-end">
+                    <button class="btn btn-secondary" @onclick="CancelDelete">キャンセル</button>
+                    <button class="btn btn-danger" @onclick="ConfirmDelete">除外する</button>
+                </div>
+            }
         </div>
     </div>
 }
@@ -55,6 +74,15 @@
                 <div class="mb-3">
                     <label class="form-label">銘柄名</label>
                     <input class="form-control" @bind="newName" placeholder="例: トヨタ自動車" maxlength="50" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">追加先リスト</label>
+                    <select class="form-select" @bind="addTargetListId">
+                        @foreach (var list in WatchState.AllLists)
+                        {
+                            <option value="@list.Id">@list.Name</option>
+                        }
+                    </select>
                 </div>
                 @if (!string.IsNullOrEmpty(addError))
                 {
@@ -117,7 +145,7 @@
 
 <div class="container-fluid px-3 py-3">
     <div class="toolbar">
-        <h2 style="margin:0;font-size:18px;font-weight:700;">
+        <h2 style="margin:0;font-size:14px;font-weight:700;">
             銘柄一覧 <span style="color:#0066cc;">@stocks.Count</span> 件
         </h2>
         <div class="d-flex gap-2 align-items-center">
@@ -138,23 +166,24 @@
             <button class="btn-refresh" @onclick="UpdateAllPrices" disabled="@isUpdatingPrices">
                 @(isUpdatingPrices ? "更新中…" : "📊 株価更新")
             </button>
-            <button class="btn-add" @onclick="OpenAddModal">＋ 銘柄を追加</button>
+            <button class="btn-add" @onclick="OpenAddModal">＋ 銘柄追加</button>
         </div>
     </div>
 
-    <div class="legend">
-        <div class="legend-item">
-            <div class="legend-dot"></div>
-            <span>アラーム日付が本日以前の銘柄（ハイライト表示）</span>
-        </div>
-    </div>
-
-    @if (stocks.Count == 0)
+@if (WatchState.AllLists.Count == 0)
     {
         <div class="empty-state">
             <div style="font-size:48px;">📋</div>
-            <p>まだ銘柄が登録されていません。</p>
-            <button class="btn-add" @onclick="OpenAddModal">＋ 銘柄を追加</button>
+            <p>まだリストが作成されていません。</p>
+            <button class="btn-add" @onclick='() => Nav.NavigateTo("settings")'>⚙ 設定でリストを作成する</button>
+        </div>
+    }
+    else if (stocks.Count == 0)
+    {
+        <div class="empty-state">
+            <div style="font-size:48px;">📋</div>
+            <p>このリストに銘柄がありません。</p>
+            <button class="btn-add" @onclick="OpenAddModal">＋ 銘柄追加</button>
         </div>
     }
     else
@@ -179,8 +208,7 @@
                         {
                             var item = stocks[i];
                             var index = i;
-                            var alarm = IsAlarm(item);
-                            <tr class="@(alarm ? "highlight-row" : "")">
+                            <tr>
                                 <td>
                                     <button class="btn-detail" @onclick="() => NavToDetail(item.Code)">詳細 ›</button>
                                 </td>
@@ -232,10 +260,6 @@
                                            value="@item.AlarmDate"
                                            @oninput="e => { item.AlarmDate = e.Value?.ToString(); }"
                                            @onblur="SaveAsync" />
-                                    @if (alarm)
-                                    {
-                                        <div class="date-badge">⚠️ アラーム</div>
-                                    }
                                 </td>
                                 <td>
                                     <button class="btn-delete" title="削除" @onclick="() => DeleteStock(item.Code)">🗑</button>
@@ -266,12 +290,14 @@
 </div>
 
 @code {
+    private List<StockItem> allStocks = [];
     private List<StockItem> stocks = [];
     private bool showAddModal = false;
     private int addTab = 0;
     private string newCode = "";
     private string newName = "";
     private string addError = "";
+    private string addTargetListId = "";
     private string nameSearchError = "";
     private bool isSearchingName = false;
 
@@ -282,6 +308,7 @@
 
     private bool showDeleteConfirm = false;
     private string deleteTargetCode = "";
+    private bool deleteIsLastList = false;
 
     private bool isUpdatingPrices = false;
     private bool priceApiError = false;
@@ -291,13 +318,49 @@
     private bool _isInitialized = false;
     private bool _startupDone = false;
 
-
     protected override async Task OnInitializedAsync()
     {
-        stocks = await StockSvc.GetAllAsync();
-        if (stocks.Any(s => !string.IsNullOrEmpty(s.LastUpdated)))
-            lastPriceUpdateTime = stocks.Where(s => s.LastUpdated != null).Max(s => s.LastUpdated) ?? "";
+        allStocks = await StockSvc.GetAllAsync();
+        if (allStocks.Any(s => !string.IsNullOrEmpty(s.LastUpdated)))
+        {
+            var rawTime = allStocks.Where(s => s.LastUpdated != null).Max(s => s.LastUpdated) ?? "";
+            if (DateTime.TryParseExact(rawTime, "yyyy-MM-dd HH:mm",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out var parsedTime))
+                lastPriceUpdateTime = parsedTime.ToString("HH:mm");
+            else
+                lastPriceUpdateTime = rawTime;
+        }
+        ApplyFilter();
+        WatchState.OnChange += OnWatchStateChanged;
         _isInitialized = true;
+    }
+
+    public void Dispose()
+    {
+        WatchState.OnChange -= OnWatchStateChanged;
+    }
+
+    private void OnWatchStateChanged()
+    {
+        ApplyFilter();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ApplyFilter()
+    {
+        var active = WatchState.ActiveList;
+        if (active == null)
+        {
+            stocks = [];
+            return;
+        }
+        var codes = active.StockCodes;
+        stocks = codes
+            .Select(c => allStocks.FirstOrDefault(s => s.Code == c))
+            .Where(s => s != null)
+            .Cast<StockItem>()
+            .ToList();
     }
 
     protected override Task OnAfterRenderAsync(bool firstRender)
@@ -333,18 +396,21 @@
             await InvokeAsync(UpdateAllPrices);
     }
 
-    private static bool IsAlarm(StockItem item)
-        => !string.IsNullOrEmpty(item.AlarmDate)
-           && string.Compare(item.AlarmDate, DateTime.Today.ToString("yyyy-MM-dd"), StringComparison.Ordinal) <= 0;
 
     // ---- 銘柄追加モーダル ----
 
     private void OpenAddModal()
     {
+        if (WatchState.AllLists.Count == 0)
+        {
+            Nav.NavigateTo("settings");
+            return;
+        }
         addTab = 0;
         newCode = "";
         newName = "";
         addError = "";
+        addTargetListId = WatchState.ActiveList?.Id ?? WatchState.AllLists.First().Id;
         nameSearchError = "";
         nameSearchQuery = "";
         nameSearchResults.Clear();
@@ -419,9 +485,10 @@
             addError = "銘柄コードを入力してください。";
             return;
         }
-        if (stocks.Any(s => s.Code == code))
+        var activeList = WatchState.AllLists.FirstOrDefault(l => l.Id == addTargetListId);
+        if (activeList != null && activeList.StockCodes.Contains(code))
         {
-            addError = $"銘柄コード「{code}」は既に登録されています。";
+            addError = $"銘柄コード「{code}」はこのリストに既に登録されています。";
             return;
         }
         if (string.IsNullOrEmpty(name))
@@ -431,8 +498,15 @@
             name = await ApiSvc.FetchJapaneseNameAsync(code) ?? "";
             isSearchingName = false;
         }
-        stocks.Add(new StockItem { Code = code, Name = name });
-        await StockSvc.SaveAsync(stocks);
+        // マスターに存在しない場合のみ追加
+        if (!allStocks.Any(s => s.Code == code))
+        {
+            allStocks.Add(new StockItem { Code = code, Name = name });
+            await StockSvc.SaveAsync(allStocks);
+        }
+        await WatchSvc.AddStockAsync(addTargetListId, code);
+        var lists = await WatchSvc.GetAllAsync();
+        WatchState.RefreshLists(lists);
         CloseAddModal();
     }
 
@@ -448,7 +522,7 @@
         int failCount = 0;
         StateHasChanged();
 
-        foreach (var item in stocks)
+        foreach (var item in stocks.ToList())
         {
             var result = await ApiSvc.FetchQuoteAsync(item.Code);
             if (result.Success && result.Quote != null)
@@ -487,7 +561,7 @@
             await Task.Delay(200);
         }
 
-        await StockSvc.SaveAsync(stocks);
+        await StockSvc.SaveAsync(allStocks);
         lastPriceUpdateTime = DateTime.Now.ToString("HH:mm");
         priceApiError = failCount > 0;
         isUpdatingPrices = false;
@@ -496,9 +570,11 @@
 
     // ---- その他操作 ----
 
-    private void DeleteStock(string code)
+    private async Task DeleteStock(string code)
     {
         deleteTargetCode = code;
+        var activeId = WatchState.ActiveList?.Id ?? "";
+        deleteIsLastList = !await WatchSvc.ExistsInOtherListAsync(activeId, code);
         showDeleteConfirm = true;
     }
 
@@ -506,32 +582,43 @@
     {
         showDeleteConfirm = false;
         deleteTargetCode = "";
+        deleteIsLastList = false;
     }
 
     private async Task ConfirmDelete()
     {
-        stocks.RemoveAll(s => s.Code == deleteTargetCode);
-        await StockSvc.SaveAsync(stocks);
+        var activeId = WatchState.ActiveList?.Id ?? "";
+        await WatchSvc.RemoveStockAsync(activeId, deleteTargetCode);
+        allStocks = await StockSvc.GetAllAsync();
+        var lists = await WatchSvc.GetAllAsync();
+        WatchState.RefreshLists(lists);
         showDeleteConfirm = false;
         deleteTargetCode = "";
+        deleteIsLastList = false;
     }
 
     private async Task MoveUp(int index)
     {
         if (index <= 0) return;
         (stocks[index], stocks[index - 1]) = (stocks[index - 1], stocks[index]);
-        await StockSvc.SaveAsync(stocks);
+        var activeId = WatchState.ActiveList?.Id ?? "";
+        await WatchSvc.UpdateOrderAsync(activeId, stocks.Select(s => s.Code).ToList());
+        var lists = await WatchSvc.GetAllAsync();
+        WatchState.RefreshLists(lists);
     }
 
     private async Task MoveDown(int index)
     {
         if (index >= stocks.Count - 1) return;
         (stocks[index], stocks[index + 1]) = (stocks[index + 1], stocks[index]);
-        await StockSvc.SaveAsync(stocks);
+        var activeId = WatchState.ActiveList?.Id ?? "";
+        await WatchSvc.UpdateOrderAsync(activeId, stocks.Select(s => s.Code).ToList());
+        var lists = await WatchSvc.GetAllAsync();
+        WatchState.RefreshLists(lists);
     }
 
     private void NavToDetail(string code) => Nav.NavigateTo("stock/" + code);
 
-    private async Task SaveAsync() => await StockSvc.SaveAsync(stocks);
+    private async Task SaveAsync() => await StockSvc.SaveAsync(allStocks);
 
 }

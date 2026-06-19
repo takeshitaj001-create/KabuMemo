@@ -1,0 +1,198 @@
+@page "/watchlists"
+@inject WatchListService WatchSvc
+@inject WatchListStateService WatchState
+@inject NavigationManager Nav
+
+<PageTitle>ウォッチリスト管理 - KabuMemo</PageTitle>
+
+@if (showDeleteConfirm)
+{
+    <div class="modal-overlay" @onclick="CancelDelete">
+        <div class="modal-box" @onclick:stopPropagation>
+            @if (deleteOrphanCount > 0)
+            {
+                <h3 style="margin:0 0 12px;font-size:18px;">リストを削除</h3>
+                <p style="margin:0 0 4px;font-size:14px;">「@deleteTargetName」を削除します。</p>
+                <p style="margin:0 0 20px;font-size:12px;color:#e57373;">
+                    このリストのみに属する銘柄（@deleteOrphanCount 件）もマスターから削除されます。
+                </p>
+            }
+            else
+            {
+                <h3 style="margin:0 0 12px;font-size:18px;">リストを削除</h3>
+                <p style="margin:0 0 20px;font-size:14px;">「@deleteTargetName」を削除します。</p>
+            }
+            <div class="d-flex gap-2 justify-content-end">
+                <button class="btn btn-secondary" @onclick="CancelDelete">キャンセル</button>
+                <button class="btn btn-danger" @onclick="ConfirmDelete">削除する</button>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-fluid px-3 py-3">
+    <div class="back-bar">
+        <button class="btn-back" @onclick='() => Nav.NavigateTo("")'>← 一覧に戻る</button>
+        <span style="font-size:13px;color:#888;">ウォッチリスト管理</span>
+    </div>
+
+    <div class="detail-card card-md-memo" style="margin-top:16px;">
+        <h3 style="margin:0 0 16px;font-size:15px;">ウォッチリスト管理</h3>
+
+        @if (watchLists.Count == 0)
+        {
+            <p style="font-size:13px;color:#aaa;margin-bottom:16px;">リストがありません。</p>
+        }
+        else
+        {
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+                @foreach (var list in watchLists)
+                {
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        @if (renamingId == list.Id)
+                        {
+                            <input class="settings-input" style="flex:1;"
+                                   value="@renamingName"
+                                   @oninput="e => renamingName = e.Value?.ToString() ?? string.Empty"
+                                   @onkeydown="e => OnRenameKeyDown(e, list.Id)" />
+                            <button class="btn-refresh-sm" @onclick="() => ConfirmRename(list.Id)">保存</button>
+                            <button class="btn-refresh-sm" @onclick="CancelRename">キャンセル</button>
+                        }
+                        else
+                        {
+                            <span style="flex:1;font-size:14px;">
+                                @list.Name
+                                <span style="font-size:11px;color:#888;margin-left:6px;">@list.StockCodes.Count 件</span>
+                            </span>
+                            <button class="btn-refresh-sm" @onclick="() => StartRename(list)">✏ 名前変更</button>
+                            <button class="btn-refresh-sm" style="color:#e57373;"
+                                    @onclick="() => OpenDeleteConfirm(list)">🗑 削除</button>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <div style="display:flex;gap:8px;align-items:center;">
+            <input class="settings-input" style="flex:1;"
+                   value="@newListName"
+                   @oninput="e => newListName = e.Value?.ToString() ?? string.Empty"
+                   placeholder="新しいリスト名"
+                   @onkeydown="OnCreateKeyDown" />
+            <button class="btn-action-primary" @onclick="CreateList"
+                    disabled="@string.IsNullOrWhiteSpace(newListName)">
+                ＋ 作成
+            </button>
+        </div>
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="settings-message @(isError ? "error" : "ok")" style="margin-top:10px;">
+                @message
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<KabuMemo.Models.WatchList> watchLists = [];
+    private string newListName = "";
+    private string message = "";
+    private bool isError = false;
+
+    private string renamingId = "";
+    private string renamingName = "";
+
+    private bool showDeleteConfirm = false;
+    private string deleteTargetId = "";
+    private string deleteTargetName = "";
+    private int deleteOrphanCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        watchLists = await WatchSvc.GetAllAsync();
+    }
+
+    private async Task CreateList()
+    {
+        var name = newListName.Trim();
+        if (string.IsNullOrEmpty(name)) return;
+        var created = await WatchSvc.CreateAsync(name);
+        newListName = "";
+        watchLists = await WatchSvc.GetAllAsync();
+        WatchState.RefreshLists(watchLists);
+        if (WatchState.ActiveList == null)
+        {
+            WatchState.SetActiveList(created);
+            await WatchSvc.SetActiveIdAsync(created.Id);
+        }
+        message = $"「{name}」を作成しました。";
+        isError = false;
+    }
+
+    private void StartRename(KabuMemo.Models.WatchList list)
+    {
+        renamingId = list.Id;
+        renamingName = list.Name;
+        message = "";
+    }
+
+    private void CancelRename()
+    {
+        renamingId = "";
+        renamingName = "";
+    }
+
+    private async Task ConfirmRename(string id)
+    {
+        var name = renamingName.Trim();
+        if (string.IsNullOrEmpty(name)) return;
+        await WatchSvc.RenameAsync(id, name);
+        watchLists = await WatchSvc.GetAllAsync();
+        WatchState.RefreshLists(watchLists);
+        renamingId = "";
+        renamingName = "";
+        message = "リスト名を変更しました。";
+        isError = false;
+    }
+
+    private async Task OnRenameKeyDown(KeyboardEventArgs e, string id)
+    {
+        if (e.Key == "Enter") await ConfirmRename(id);
+        else if (e.Key == "Escape") CancelRename();
+    }
+
+    private async Task OnCreateKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await CreateList();
+    }
+
+    private async Task OpenDeleteConfirm(KabuMemo.Models.WatchList list)
+    {
+        deleteTargetId = list.Id;
+        deleteTargetName = list.Name;
+        deleteOrphanCount = await WatchSvc.GetOrphanCountAsync(list.Id);
+        showDeleteConfirm = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirm = false;
+        deleteTargetId = "";
+        deleteTargetName = "";
+        deleteOrphanCount = 0;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        await WatchSvc.DeleteAsync(deleteTargetId);
+        watchLists = await WatchSvc.GetAllAsync();
+        WatchState.RefreshLists(watchLists);
+        message = $"「{deleteTargetName}」を削除しました。";
+        isError = false;
+        showDeleteConfirm = false;
+        deleteTargetId = "";
+        deleteTargetName = "";
+        deleteOrphanCount = 0;
+    }
+}

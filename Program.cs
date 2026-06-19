@@ -18,5 +18,7 @@ builder.Services.AddScoped<DisclosureService>(sp => new DisclosureService(
     new HttpClient { Timeout = TimeSpan.FromSeconds(15) },
     sp.GetRequiredService<IJSRuntime>()
 ));
+builder.Services.AddScoped<WatchListService>();
+builder.Services.AddScoped<WatchListStateService>();
 
 await builder.Build().RunAsync();
