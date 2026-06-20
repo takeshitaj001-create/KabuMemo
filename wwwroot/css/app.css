@@ -1232,6 +1232,40 @@ tr.highlight-row td:first-child {
     }
 }
 
+/* ヘッダー：スマホ2行レイアウト */
+@media (max-width: 640px) {
+    .app-header {
+        height: auto;
+        min-height: 56px;
+        flex-wrap: wrap;
+        padding: 8px 12px;
+        gap: 4px 8px;
+    }
+
+    .app-header h1 {
+        font-size: 16px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .app-header > div:last-child {
+        flex-shrink: 0;
+    }
+
+    .watchlist-dropdown-wrap {
+        order: 3;
+        width: 100%;
+        padding-bottom: 2px;
+    }
+
+    .watchlist-select {
+        max-width: 100%;
+        flex: 1;
+        width: 100%;
+        font-size: 13px;
+    }
+}
+
 /* レスポンシブ */
 @media (max-width: 640px) {
     .link-row {
