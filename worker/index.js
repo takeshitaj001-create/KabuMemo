@@ -456,30 +456,20 @@ async function translateToJapanese(text, env) {
   // Workers AI を試みる（失敗したら MyMemory にフォールバック）
   if (hasAI) {
     try {
-      const chunks = splitChunks(text, 1000);
-      const parts = [];
-      for (const chunk of chunks) {
-        const translated = await translateChunkWithAI(chunk, env);
-        parts.push(translated);
-      }
+      const chunks = splitChunks(text, 500);
+      const parts = await Promise.all(chunks.map(chunk => translateChunkWithAI(chunk, env)));
       return parts.join('');
     } catch (aiErr) {
       console.error('[translate] Workers AI failed, falling back to MyMemory:', aiErr?.message ?? aiErr);
     }
   }
 
-  // MyMemory フォールバック（450 字制限）
+  // MyMemory フォールバック（450 字制限・並列）
   try {
     const chunks = splitChunks(text, 450);
-    const parts = [];
-    for (const chunk of chunks) {
-      try {
-        const translated = await translateChunkWithMyMemory(chunk);
-        parts.push(translated);
-      } catch {
-        parts.push(chunk);
-      }
-    }
+    const parts = await Promise.all(
+      chunks.map(chunk => translateChunkWithMyMemory(chunk).catch(() => chunk))
+    );
     return parts.join('');
   } catch {
     return text;

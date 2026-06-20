@@ -12,7 +12,7 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddScoped<StockService>();
 builder.Services.AddScoped<GitHubService>();
 builder.Services.AddScoped(_ => new StockApiService(
-    new HttpClient { Timeout = TimeSpan.FromSeconds(10) }
+    new HttpClient { Timeout = TimeSpan.FromSeconds(60) }
 ));
 builder.Services.AddScoped<DisclosureService>(sp => new DisclosureService(
     new HttpClient { Timeout = TimeSpan.FromSeconds(15) },
