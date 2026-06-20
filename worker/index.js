@@ -412,15 +412,38 @@ async function handleDividends(code) {
   });
 }
 
-async function translateToJapanese(text) {
+async function translateChunkWithAI(chunk, env) {
+  const result = await env.AI.run('@cf/meta/m2m100-1.2b', {
+    text: chunk,
+    source_lang: 'en',
+    target_lang: 'ja',
+  });
+  return result?.translated_text ?? chunk;
+}
+
+async function translateChunkWithMyMemory(chunk) {
+  const resp = await fetch(
+    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=en|ja`,
+    { headers: { 'Accept': 'application/json' } }
+  );
+  if (!resp.ok) return chunk;
+  const d = await resp.json();
+  if (d?.responseStatus !== 200) return chunk;
+  return d?.responseData?.translatedText ?? chunk;
+}
+
+async function translateToJapanese(text, env) {
   if (!text) return '';
 
-  // 文単位で 450 文字以内のチャンクに分割
+  const useAI = !!env?.AI;
+
+  // 文単位でチャンクに分割（AI: 1000 字、MyMemory: 450 字）
+  const limit = useAI ? 1000 : 450;
   const sentences = text.match(/[^.!?]+[.!?]*/g) ?? [text];
   const chunks = [];
   let current = '';
   for (const s of sentences) {
-    if ((current + s).length > 450 && current) {
+    if ((current + s).length > limit && current) {
       chunks.push(current.trim());
       current = s;
     } else {
@@ -429,20 +452,13 @@ async function translateToJapanese(text) {
   }
   if (current.trim()) chunks.push(current.trim());
 
-  // 各チャンクを MyMemory で翻訳
   const parts = [];
   for (const chunk of chunks) {
     try {
-      const resp = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=en|ja`,
-        { headers: { 'Accept': 'application/json' } }
-      );
-      if (resp.ok) {
-        const d = await resp.json();
-        parts.push(d?.responseData?.translatedText ?? chunk);
-      } else {
-        parts.push(chunk);
-      }
+      const translated = useAI
+        ? await translateChunkWithAI(chunk, env)
+        : await translateChunkWithMyMemory(chunk);
+      parts.push(translated);
     } catch {
       parts.push(chunk);
     }
@@ -450,7 +466,7 @@ async function translateToJapanese(text) {
   return parts.join('');
 }
 
-async function handleSummary(code) {
+async function handleSummary(code, env) {
   if (!cachedSession) await refreshSession();
   const { crumb, cookies } = cachedSession;
   const symbol = encodeURIComponent(code + '.T');
@@ -472,7 +488,7 @@ async function handleSummary(code) {
 
   if (rawDescription) {
     try {
-      description = await translateToJapanese(rawDescription);
+      description = await translateToJapanese(rawDescription, env);
     } catch {
       description = rawDescription;
     }
@@ -580,7 +596,7 @@ async function handleName(query) {
 // ---- メインハンドラ ----
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
 
     if (request.method === 'OPTIONS') {
@@ -614,7 +630,7 @@ export default {
       if (path.startsWith('/api/summary/')) {
         const code = path.slice('/api/summary/'.length);
         if (!code) return new Response('code required', { status: 400, headers: CORS });
-        return await handleSummary(code);
+        return await handleSummary(code, env);
       }
 
       if (path.startsWith('/api/tdnet/')) {
