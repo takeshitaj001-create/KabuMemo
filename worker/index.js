@@ -432,13 +432,7 @@ async function translateChunkWithMyMemory(chunk) {
   return d?.responseData?.translatedText ?? chunk;
 }
 
-async function translateToJapanese(text, env) {
-  if (!text) return '';
-
-  const useAI = !!env?.AI;
-
-  // 文単位でチャンクに分割（AI: 1000 字、MyMemory: 450 字）
-  const limit = useAI ? 1000 : 450;
+function splitChunks(text, limit) {
   const sentences = text.match(/[^.!?]+[.!?]*/g) ?? [text];
   const chunks = [];
   let current = '';
@@ -451,19 +445,45 @@ async function translateToJapanese(text, env) {
     }
   }
   if (current.trim()) chunks.push(current.trim());
+  return chunks;
+}
 
-  const parts = [];
-  for (const chunk of chunks) {
+async function translateToJapanese(text, env) {
+  if (!text) return '';
+
+  const hasAI = !!env?.AI;
+
+  // Workers AI を試みる（失敗したら MyMemory にフォールバック）
+  if (hasAI) {
     try {
-      const translated = useAI
-        ? await translateChunkWithAI(chunk, env)
-        : await translateChunkWithMyMemory(chunk);
-      parts.push(translated);
-    } catch {
-      parts.push(chunk);
+      const chunks = splitChunks(text, 1000);
+      const parts = [];
+      for (const chunk of chunks) {
+        const translated = await translateChunkWithAI(chunk, env);
+        parts.push(translated);
+      }
+      return parts.join('');
+    } catch (aiErr) {
+      console.error('[translate] Workers AI failed, falling back to MyMemory:', aiErr?.message ?? aiErr);
     }
   }
-  return parts.join('');
+
+  // MyMemory フォールバック（450 字制限）
+  try {
+    const chunks = splitChunks(text, 450);
+    const parts = [];
+    for (const chunk of chunks) {
+      try {
+        const translated = await translateChunkWithMyMemory(chunk);
+        parts.push(translated);
+      } catch {
+        parts.push(chunk);
+      }
+    }
+    return parts.join('');
+  } catch {
+    return text;
+  }
 }
 
 async function handleSummary(code, env) {
@@ -485,12 +505,17 @@ async function handleSummary(code, env) {
 
   const rawDescription = profile.longBusinessSummary ?? '';
   let description = '';
+  let translationNote = null;
 
   if (rawDescription) {
     try {
       description = await translateToJapanese(rawDescription, env);
-    } catch {
+      if (description === rawDescription) {
+        translationNote = 'untranslated';
+      }
+    } catch (e) {
       description = rawDescription;
+      translationNote = String(e?.message ?? e);
     }
   }
 
@@ -506,6 +531,7 @@ async function handleSummary(code, env) {
     city: profile.city ?? null,
     country: profile.country ?? null,
     earningsDate: nextEarningsDate,
+    ...(translationNote ? { _translationNote: translationNote } : {}),
   };
 
   return new Response(JSON.stringify(result), {
