@@ -543,9 +543,11 @@ tr.highlight-row td:first-child {
     inset: 0;
     background: rgba(0, 0, 0, 0.45);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     z-index: 2000;
+    overflow-y: auto;
+    padding: 20px 0;
 }
 
 .modal-box {
@@ -556,6 +558,8 @@ tr.highlight-row td:first-child {
     max-width: 480px;
     width: 90%;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
 }
 
 /* 戻るバー */
@@ -1178,7 +1182,7 @@ tr.highlight-row td:first-child {
 
 /* CSVモーダル */
 .modal-box-wide {
-    min-width: 480px;
+    min-width: 0;
     max-width: 760px;
     width: 95%;
 }

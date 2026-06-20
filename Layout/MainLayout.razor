@@ -89,7 +89,7 @@
             {
                 <div class="alert alert-danger py-1 px-2 mb-2" style="font-size:13px;">@csvError</div>
             }
-            <textarea class="csv-textarea" rows="14"
+            <textarea class="csv-textarea" rows="10"
                       value="@csvText"
                       @oninput="e => csvText = e.Value?.ToString() ?? string.Empty"></textarea>
             <div class="d-flex gap-2 justify-content-end mt-3">
@@ -164,7 +164,7 @@
                         </button>
                     }
                 </div>
-                <div style="max-height:220px;overflow-y:auto;border:1px solid #333;border-radius:6px;margin-bottom:12px;">
+                <div style="max-height:min(220px, 35vh);overflow-y:auto;border:1px solid #333;border-radius:6px;margin-bottom:12px;">
                     <table style="width:100%;border-collapse:collapse;font-size:12px;">
                         @foreach (var item in importPreview)
                         {
