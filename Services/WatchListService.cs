@@ -138,6 +138,15 @@ public class WatchListService(IJSRuntime js, StockService stockService)
         return lists.Any(l => l.Id != currentListId && l.StockCodes.Contains(code));
     }
 
+    // ウォッチリスト自体の並び順を変更
+    public async Task ReorderAsync(int fromIndex, int toIndex)
+    {
+        var lists = await GetAllAsync();
+        if (fromIndex < 0 || fromIndex >= lists.Count || toIndex < 0 || toIndex >= lists.Count) return;
+        (lists[fromIndex], lists[toIndex]) = (lists[toIndex], lists[fromIndex]);
+        await SaveAllAsync(lists);
+    }
+
     // リスト内の並び順を保存
     public async Task UpdateOrderAsync(string listId, List<string> orderedCodes)
     {

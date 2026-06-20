@@ -60,6 +60,12 @@
                         }
                         else
                         {
+                            <div class="sort-btns">
+                                <button class="btn-sort" @onclick="() => MoveUp(watchLists.IndexOf(list))"
+                                        disabled="@(watchLists.IndexOf(list) == 0)">▲</button>
+                                <button class="btn-sort" @onclick="() => MoveDown(watchLists.IndexOf(list))"
+                                        disabled="@(watchLists.IndexOf(list) == watchLists.Count - 1)">▼</button>
+                            </div>
                             <span style="flex:1;font-size:14px;">
                                 @list.Name
                                 <span style="font-size:11px;color:#888;margin-left:6px;">@list.StockCodes.Count 件</span>
@@ -194,5 +200,21 @@
         deleteTargetId = "";
         deleteTargetName = "";
         deleteOrphanCount = 0;
+    }
+
+    private async Task MoveUp(int index)
+    {
+        if (index <= 0) return;
+        await WatchSvc.ReorderAsync(index, index - 1);
+        watchLists = await WatchSvc.GetAllAsync();
+        WatchState.RefreshLists(watchLists);
+    }
+
+    private async Task MoveDown(int index)
+    {
+        if (index >= watchLists.Count - 1) return;
+        await WatchSvc.ReorderAsync(index, index + 1);
+        watchLists = await WatchSvc.GetAllAsync();
+        WatchState.RefreshLists(watchLists);
     }
 }
