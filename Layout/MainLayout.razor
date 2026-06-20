@@ -80,10 +80,14 @@
 {
     <div class="modal-overlay" @onclick="CloseCsvModal">
         <div class="modal-box modal-box-wide" @onclick:stopPropagation>
-            <h3 style="margin:0 0 8px;font-size:18px;">📋 銘柄データをCSVで編集</h3>
+            <h3 style="margin:0 0 4px;font-size:18px;">📋 銘柄データをCSVで編集</h3>
+            <div style="margin:0 0 10px;font-size:12px;color:#0066cc;font-weight:600;">
+                対象リスト: @(WatchState.ActiveList?.Name ?? "—")
+            </div>
             <p style="margin:0 0 12px;font-size:12px;color:#888;">
                 ヘッダー行はそのままにして、データ行を自由に編集・並べ替えできます。<br>
-                保存するとこの内容で銘柄一覧が上書きされます。株価などの取得済みデータは保持されます。
+                行を削除するとこのリストから除外されます（他リストのデータは保持）。<br>
+                メモ・アラーム日付は他リストと共有されます。
             </p>
             @if (!string.IsNullOrEmpty(csvError))
             {
@@ -454,7 +458,13 @@
     private async Task OpenCsvModal()
     {
         showSettingsModal = false;
-        stocks = await StockSvc.GetAllAsync();
+        var allStocks = await StockSvc.GetAllAsync();
+        var activeList = WatchState.ActiveList;
+        stocks = activeList != null
+            ? activeList.StockCodes
+                .Select(c => allStocks.FirstOrDefault(s => s.Code == c))
+                .Where(s => s != null).Cast<StockItem>().ToList()
+            : allStocks;
         csvText = ExportToCsv(stocks);
         csvError = "";
         showCsvModal = true;
@@ -464,14 +474,45 @@
 
     private async Task SaveCsv()
     {
-        var (result, error) = ImportFromCsv(csvText, stocks);
+        var allStocks = await StockSvc.GetAllAsync();
+        var (result, error) = ImportFromCsv(csvText, allStocks);
         if (error != null)
         {
             csvError = error;
             return;
         }
-        stocks = result!;
-        await StockSvc.SaveAsync(stocks);
+
+        // マスターのデータを更新（名前・メモ・アラーム日等）
+        foreach (var s in result!)
+        {
+            var idx = allStocks.FindIndex(x => x.Code == s.Code);
+            if (idx >= 0) allStocks[idx] = s;
+            else allStocks.Add(s);
+        }
+        await StockSvc.SaveAsync(allStocks);
+
+        // アクティブリストの順序・メンバーを更新
+        var activeId = WatchState.ActiveList?.Id ?? "";
+        if (!string.IsNullOrEmpty(activeId))
+        {
+            var newCodes = result!.Select(s => s.Code).ToList();
+            var prevCodes = WatchState.ActiveList?.StockCodes.ToList() ?? [];
+
+            // CSV から消えた銘柄をリストから除外
+            foreach (var removed in prevCodes.Except(newCodes).ToList())
+                await WatchSvc.RemoveStockAsync(activeId, removed);
+
+            // CSV で新たに追加された銘柄をリストに追加
+            foreach (var added in newCodes.Except(prevCodes).ToList())
+                await WatchSvc.AddStockAsync(activeId, added);
+
+            // 並び順を反映
+            await WatchSvc.UpdateOrderAsync(activeId, newCodes);
+
+            var lists = await WatchSvc.GetAllAsync();
+            WatchState.RefreshLists(lists);
+        }
+
         showCsvModal = false;
         Nav.NavigateTo("", forceLoad: true);
     }
