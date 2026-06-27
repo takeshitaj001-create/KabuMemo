@@ -32,49 +32,6 @@
     </div>
 }
 
-@* 高度な操作モーダル *@
-@if (showSettingsModal)
-{
-    <div class="modal-overlay" @onclick="CloseSettingsModal">
-        <div class="modal-box" @onclick:stopPropagation>
-            <h3 style="margin:0 0 16px;font-size:18px;">⚙ 高度な操作</h3>
-            <div class="d-flex flex-column gap-2">
-                <button class="btn-settings-item" @onclick="OpenCsvModal">
-                    <span style="font-size:16px;">📋</span>
-                    <div>
-                        <div style="font-weight:600;font-size:14px;">銘柄データをCSVで編集</div>
-                        <div style="font-size:12px;color:#888;margin-top:2px;">テキスト形式で一括編集・バックアップ</div>
-                    </div>
-                </button>
-                <button class="btn-settings-item" @onclick="OpenImportModal">
-                    <span style="font-size:16px;">📂</span>
-                    <div>
-                        <div style="font-weight:600;font-size:14px;">ファイルからデータ登録</div>
-                        <div style="font-size:12px;color:#888;margin-top:2px;">証券会社CSVから未登録銘柄を一括追加</div>
-                    </div>
-                </button>
-                <button class="btn-settings-item" @onclick="GoWatchLists">
-                    <span style="font-size:16px;">📁</span>
-                    <div>
-                        <div style="font-weight:600;font-size:14px;">ウォッチリスト管理</div>
-                        <div style="font-size:12px;color:#888;margin-top:2px;">リストの作成・名前変更・削除</div>
-                    </div>
-                </button>
-                <button class="btn-settings-item" @onclick="GoSettings">
-                    <span style="font-size:16px;">☁</span>
-                    <div>
-                        <div style="font-weight:600;font-size:14px;">GitHub共有設定</div>
-                        <div style="font-size:12px;color:#888;margin-top:2px;">MDファイルの共有に使用するリポジトリを設定</div>
-                    </div>
-                </button>
-            </div>
-            <div class="d-flex justify-content-end mt-3">
-                <button class="btn btn-secondary btn-sm" @onclick="CloseSettingsModal">閉じる</button>
-            </div>
-        </div>
-    </div>
-}
-
 @* CSV編集モーダル *@
 @if (showCsvModal)
 {
@@ -219,7 +176,10 @@
     </div>
 }
 
+<NavMenu @ref="navMenu" OnCsvModalOpen="OpenCsvModal" OnImportModalOpen="OpenImportModal" />
+
 <header class="app-header">
+    <button class="btn-hamburger" @onclick="OpenNavMenu">≡</button>
     <h1>📈 株価メモ</h1>
     @if (ShowDropdown)
     {
@@ -236,10 +196,6 @@
             </select>
         </div>
     }
-    <div style="display:flex;align-items:center;gap:12px;">
-        <button class="btn-disc-nav" @onclick='() => Nav.NavigateTo("disclosures")'>IR情報一覧</button>
-        <button class="btn-gear" title="高度な操作" @onclick="OpenSettingsModal">⚙</button>
-    </div>
 </header>
 
 <main class="app-main">
@@ -247,7 +203,7 @@
 </main>
 
 @code {
-    private bool showSettingsModal = false;
+    private NavMenu? navMenu;
     private bool showCsvModal = false;
     private string csvText = "";
 
@@ -338,12 +294,10 @@
     private string csvError = "";
     private List<StockItem> stocks = [];
 
-    private void OpenSettingsModal() => showSettingsModal = true;
-    private void CloseSettingsModal() => showSettingsModal = false;
+    private void OpenNavMenu() => navMenu?.Open();
 
     private void OpenImportModal()
     {
-        showSettingsModal = false;
         importPreview = [];
         importError = "";
         importMessage = "";
@@ -443,21 +397,8 @@
         return [.. results.GroupBy(r => r.Code).Select(g => g.First())];
     }
 
-    private void GoWatchLists()
-    {
-        showSettingsModal = false;
-        Nav.NavigateTo("watchlists");
-    }
-
-    private void GoSettings()
-    {
-        showSettingsModal = false;
-        Nav.NavigateTo("settings");
-    }
-
     private async Task OpenCsvModal()
     {
-        showSettingsModal = false;
         var allStocks = await StockSvc.GetAllAsync();
         var activeList = WatchState.ActiveList;
         stocks = activeList != null
