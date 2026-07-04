@@ -12,13 +12,17 @@
                 <NavLink class="nav-menu-link" href="" Match="NavLinkMatch.All" @onclick="Close">
                     🏠 ホーム
                 </NavLink>
+                <NavLink class="nav-menu-link" href="disclosures" @onclick="Close">
+                    📰 IR情報一覧
+                </NavLink>
                 <a href="https://fx.minkabu.jp/indicators" target="_blank" rel="noopener noreferrer"
                    class="nav-menu-link" @onclick="Close">
                     📅 経済指標カレンダー
                 </a>
-                <NavLink class="nav-menu-link" href="disclosures" @onclick="Close">
-                    📰 IR情報一覧
-                </NavLink>
+                <a href="https://inav.ice.com/tse/iopv/table?language=jp" target="_blank" rel="noopener noreferrer"
+                   class="nav-menu-link" @onclick="Close">
+                    📈 ETFの推定価値を確認
+                </a>
                 <hr class="nav-divider" />
                 <NavLink class="nav-menu-link" href="watchlists" @onclick="Close">
                     📁 ウォッチリスト管理
