@@ -208,7 +208,10 @@
                         {
                             var item = stocks[i];
                             var index = i;
-                            <tr>
+                            var isAlarmActive = !string.IsNullOrEmpty(item.AlarmDate)
+                                && DateTime.TryParse(item.AlarmDate, out var alarmDt)
+                                && alarmDt.Date <= DateTime.Today;
+                            <tr class="@(isAlarmActive ? "highlight-row" : "")">
                                 <td>
                                     <button class="btn-detail" @onclick="() => NavToDetail(item.Code)">詳細 ›</button>
                                 </td>
@@ -258,8 +261,7 @@
                                 <td>
                                     <input type="date" class="date-input"
                                            value="@item.AlarmDate"
-                                           @oninput="e => { item.AlarmDate = e.Value?.ToString(); }"
-                                           @onblur="SaveAsync" />
+                                           @onchange="async e => { item.AlarmDate = e.Value?.ToString(); await SaveAsync(); }" />
                                 </td>
                                 <td>
                                     <button class="btn-delete" title="削除" @onclick="() => DeleteStock(item.Code)">🗑</button>
