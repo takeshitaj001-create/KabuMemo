@@ -29,10 +29,10 @@
             <div class="detail-price-block">
                 @if (stock.CurrentPrice.HasValue)
                 {
-                    <div class="detail-price">¥@stock.CurrentPrice.Value.ToString("N0")</div>
+                    <div class="detail-price">¥@stock.CurrentPrice.Value.ToString("N1")</div>
                     <div class="detail-change @stock.PriceDirection">
                         @(stock.PriceDirection == "up" ? "▲" : stock.PriceDirection == "down" ? "▼" : "—")
-                        @(stock.PriceChange.HasValue? Math.Abs(stock.PriceChange.Value).ToString("N0") : "")
+                        @(stock.PriceChange.HasValue? Math.Abs(stock.PriceChange.Value).ToString("N1") : "")
                         @(stock.PriceChangeRate.HasValue ? $"({(stock.PriceChangeRate.Value >= 0 ? "+" :
           "")}{stock.PriceChangeRate.Value:F2}%)" : "")
                     </div>

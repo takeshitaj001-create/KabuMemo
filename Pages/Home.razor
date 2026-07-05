@@ -228,10 +228,10 @@
                                 <td>
                                     @if (item.CurrentPrice.HasValue)
                                     {
-                                        <div class="price">¥@item.CurrentPrice.Value.ToString("N0")</div>
+                                        <div class="price">¥@item.CurrentPrice.Value.ToString("N1")</div>
                                         <div class="change @item.PriceDirection">
                                             @(item.PriceDirection == "up" ? "▲" : item.PriceDirection == "down" ? "▼" : "—")
-                                            @(item.PriceChange.HasValue ? Math.Abs(item.PriceChange.Value).ToString("N0") : "")
+                                            @(item.PriceChange.HasValue ? Math.Abs(item.PriceChange.Value).ToString("N1") : "")
                                             @(item.PriceChangeRate.HasValue ? $"({(item.PriceChangeRate.Value >= 0 ? "+" : "")}{item.PriceChangeRate.Value:F2}%)" : "")
                                         </div>
                                         @if (!string.IsNullOrEmpty(item.LastUpdated))
